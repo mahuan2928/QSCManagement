@@ -1,0 +1,452 @@
+[
+  {
+    "key": "operation-001",
+    "label": "運営基準項目 001",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_001_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_001_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-002",
+    "label": "運営基準項目 002",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_002_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_002_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-003",
+    "label": "運営基準項目 003",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_003_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_003_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-004",
+    "label": "運営基準項目 004",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_004_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_004_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-005",
+    "label": "運営基準項目 005",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_005_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_005_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-006",
+    "label": "運営基準項目 006",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_006_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_006_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-007",
+    "label": "運営基準項目 007",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_007_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_007_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-008",
+    "label": "運営基準項目 008",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_008_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_008_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-009",
+    "label": "運営基準項目 009",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_009_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_009_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-010",
+    "label": "運営基準項目 010",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_010_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_010_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-011",
+    "label": "運営基準項目 011",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_011_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_011_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-012",
+    "label": "運営基準項目 012",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_012_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_012_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-013",
+    "label": "運営基準項目 013",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_013_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_013_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-014",
+    "label": "運営基準項目 014",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_014_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_014_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-015",
+    "label": "運営基準項目 015",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_015_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_015_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-016",
+    "label": "運営基準項目 016",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_016_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_016_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-017",
+    "label": "運営基準項目 017",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_017_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_017_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-018",
+    "label": "運営基準項目 018",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_018_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_018_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-019",
+    "label": "運営基準項目 019",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_019_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_019_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-020",
+    "label": "運営基準項目 020",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_020_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_020_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-021",
+    "label": "運営基準項目 021",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_021_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_021_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-022",
+    "label": "運営基準項目 022",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_022_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_022_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-023",
+    "label": "運営基準項目 023",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_023_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_023_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-024",
+    "label": "運営基準項目 024",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_024_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_024_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-025",
+    "label": "運営基準項目 025",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_025_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_025_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-026",
+    "label": "運営基準項目 026",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_026_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_026_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-027",
+    "label": "運営基準項目 027",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_027_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_027_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-028",
+    "label": "運営基準項目 028",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_028_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_028_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-029",
+    "label": "運営基準項目 029",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_029_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_029_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-030",
+    "label": "運営基準項目 030",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_030_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_030_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-031",
+    "label": "運営基準項目 031",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_031_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_031_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-032",
+    "label": "運営基準項目 032",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_032_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_032_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-033",
+    "label": "運営基準項目 033",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_033_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_033_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-034",
+    "label": "運営基準項目 034",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_034_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_034_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-035",
+    "label": "運営基準項目 035",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_035_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_035_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-036",
+    "label": "運営基準項目 036",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_036_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_036_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-037",
+    "label": "運営基準項目 037",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_037_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_037_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-038",
+    "label": "運営基準項目 038",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_038_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_038_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-039",
+    "label": "運営基準項目 039",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_039_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_039_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-040",
+    "label": "運営基準項目 040",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_040_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_040_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-041",
+    "label": "運営基準項目 041",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_041_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_041_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-042",
+    "label": "運営基準項目 042",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_042_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_042_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-043",
+    "label": "運営基準項目 043",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_043_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_043_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-044",
+    "label": "運営基準項目 044",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_044_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_044_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-045",
+    "label": "運営基準項目 045",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_045_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_045_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-046",
+    "label": "運営基準項目 046",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_046_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_046_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-047",
+    "label": "運営基準項目 047",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_047_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_047_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-048",
+    "label": "運営基準項目 048",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_048_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_048_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-049",
+    "label": "運営基準項目 049",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_049_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_049_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  },
+  {
+    "key": "operation-050",
+    "label": "運営基準項目 050",
+    "group": "運営基準",
+    "maxScore": 1,
+    "larkFieldId": "__UNRESOLVED_OPERATION_050_FIELD_ID__",
+    "larkFieldName": "__UNRESOLVED_OPERATION_050_FIELD_NAME__",
+    "description": "Replace with the exact writable OK/NG field from the production Base schema."
+  }
+]

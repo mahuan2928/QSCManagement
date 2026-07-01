@@ -1,0 +1,62 @@
+{
+  "appToken": "RADabvBDpavPzFsMmIHj7KOxpXc",
+  "tables": {
+    "stores": {
+      "tableId": "tblPXXFwLGJh96Np",
+      "tableName": "店舗マスタ(これを使用する)",
+      "formatFieldName": "フォーマット",
+      "groupFieldName": "グループ",
+      "svFieldName": "SV",
+      "managerFieldName": "マネージャー",
+      "officerFieldName": "管理官",
+      "latestDateFieldName": "最新日付",
+      "currentOperationScoreFieldName": "今回点数（運営）",
+      "currentValueScoreFieldName": "今回点数（創造）",
+      "currentTotalScoreFieldName": "今回点数合計",
+      "previousTotalScoreFieldName": "前回点数合計",
+      "currentRankFieldName": "今回ランキング",
+      "previousRankFieldName": "前回ランキング",
+      "hygieneCurrentScoreFieldName": "花王衛生検査点数",
+      "hygienePreviousScoreFieldName": "花王衛生検査前回点数"
+    },
+    "minimum": {
+      "tableId": "tblVQA4TkDmBAImb",
+      "tableName": "最低遵守項目",
+      "scoreFieldName": "最低遵守点数",
+      "gradeFieldName": "店舗評価",
+      "completionFieldName": "評価完了チェック"
+    },
+    "operation": {
+      "tableId": "tbldp5mMzD6BRkuj",
+      "tableName": "運営基準項目",
+      "scoreFieldName": "運営基準点数",
+      "gradeFieldName": "店舗評価",
+      "completionFieldName": "評価完了チェック"
+    },
+    "value": {
+      "tableId": "tblq0BeYXTzhCqcs",
+      "tableName": "価値創造項目",
+      "scoreFieldName": "価値創造点数",
+      "gradeFieldName": "店舗評価",
+      "completionFieldName": "評価完了チェック"
+    },
+    "issues": {
+      "tableId": "tblatoQ7jqgteyQP",
+      "tableName": "問題指摘",
+      "surveyTypeFieldName": "アンケート集別",
+      "cycleFieldName": "第〇クール",
+      "typeFieldName": "種別",
+      "minimumIssueFieldName": "最低遵守指摘項目",
+      "operationIssueFieldName": "運営基準指摘項目",
+      "valueIssueFieldName": "価値創造指摘項目",
+      "improvementFieldName": "改善方法 ※SV設定",
+      "dueDateFieldName": "改善期限",
+      "photoFieldName": "写真",
+      "commentFieldName": "コメント"
+    },
+    "itemMaster": {
+      "tableId": "tblQJcMuzwota38S",
+      "tableName": "評価項目マスター"
+    }
+  }
+}
