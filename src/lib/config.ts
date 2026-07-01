@@ -32,9 +32,10 @@ function createGeneratedChecklist(options: {
 
 export const appConfig = {
   title: "５C管理プラットフォーム",
-  larkAppId: process.env.LARK_APP_ID ?? "",
+  larkAppId: process.env.LARK_APP_ID ?? "cli_aab135f2e0b85e15",
   larkAppSecret: process.env.LARK_APP_SECRET ?? "",
-  larkRedirectUri: process.env.LARK_REDIRECT_URI ?? "",
+  larkRedirectUri:
+    process.env.LARK_REDIRECT_URI ?? "https://qscmanagement.mahuan220.workers.dev/api/auth/lark/callback",
   larkBaseAppToken: process.env.LARK_BASE_APP_TOKEN ?? "RADabvBDpavPzFsMmIHj7KOxpXc",
   larkStoreTableId: process.env.LARK_BASE_STORE_TABLE_ID ?? "tblPXXFwLGJh96Np",
   larkMinimumTableId: process.env.LARK_BASE_MINIMUM_TABLE_ID ?? "tblVQA4TkDmBAImb",
