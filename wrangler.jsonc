@@ -14,6 +14,22 @@
       "service": "qscmanagement"
     }
   ],
+  "vars": {
+    "LARK_APP_ID": "cli_aab135f2e0b85e15",
+    "LARK_REDIRECT_URI": "https://qscmanagement.mahuan220.workers.dev/api/auth/lark/callback",
+    "LARK_BASE_APP_TOKEN": "RADabvBDpavPzFsMmIHj7KOxpXc",
+    "LARK_BASE_STORE_TABLE_ID": "tblPXXFwLGJh96Np",
+    "LARK_BASE_MINIMUM_TABLE_ID": "tblVQA4TkDmBAImb",
+    "LARK_BASE_OPERATION_TABLE_ID": "tbldp5mMzD6BRkuj",
+    "LARK_BASE_VALUE_TABLE_ID": "tblq0BeYXTzhCqcs",
+    "LARK_BASE_ISSUE_TABLE_ID": "tblatoQ7jqgteyQP",
+    "LARK_BASE_ITEM_MASTER_TABLE_ID": "tblQJcMuzwota38S",
+    "LARK_AUTH_BASE_URL": "https://accounts.larksuite.com",
+    "LARK_OPEN_API_BASE_URL": "https://open.larksuite.com",
+    "LARK_STORE_OWNER_FIELD_ID": "店舗ユーザーID",
+    "LARK_SV_OWNER_FIELD_ID": "SVユーザーID",
+    "LARK_OAUTH_SCOPE": "offline_access bitable:app bitable:app:readonly contact:user.base:readonly"
+  },
   "observability": {
     "enabled": true
   }
