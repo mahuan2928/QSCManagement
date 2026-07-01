@@ -49,7 +49,7 @@ export const appConfig = {
   svOwnerFieldId: process.env.LARK_SV_OWNER_FIELD_ID ?? "SVユーザーID",
   oauthScope:
     process.env.LARK_OAUTH_SCOPE ??
-    "bitable:app:readonly bitable:app offline_access contact:user.base:readonly",
+    "offline_access bitable:app bitable:app:readonly contact:user.base:readonly",
 };
 
 const defaultOperationChecklist: ChecklistDefinition[] = createGeneratedChecklist({

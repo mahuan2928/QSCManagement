@@ -46,12 +46,20 @@ async function requestToken(code: string): Promise<LarkTokenResponse> {
   const json = (await response.json()) as {
     code: number;
     msg?: string;
-    data?: LarkTokenResponse;
+    error?: string;
+    error_description?: string;
+    access_token?: string;
+    refresh_token?: string;
   };
-  if (json.code !== 0 || !json.data) {
-    throw new Error(json.msg ?? "`user_access_token` を取得できません。");
+  if (json.code !== 0 || !json.access_token) {
+    throw new Error(
+      json.msg ?? json.error_description ?? json.error ?? "`user_access_token` を取得できません。",
+    );
   }
-  return json.data;
+  return {
+    access_token: json.access_token,
+    refresh_token: json.refresh_token,
+  };
 }
 
 async function requestUserInfo(accessToken: string): Promise<LarkUserInfoResponse> {
