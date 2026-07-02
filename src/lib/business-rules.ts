@@ -76,15 +76,40 @@ export function canAdvanceAfterMinimum(items: AuditChecklistItem[]): boolean {
   return calculateChecklistScore(items) === MINIMUM_PASS_SCORE;
 }
 
+function parseDateValue(value: string): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const numericValue = Number(normalized);
+  const parsed = Number.isFinite(numericValue) && /^\d+$/.test(normalized)
+    ? new Date(numericValue)
+    : new Date(normalized);
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function isDueSoon(dueDate: string): boolean {
-  const due = new Date(dueDate).getTime();
+  const due = parseDateValue(dueDate)?.getTime();
+  if (due === undefined) {
+    return false;
+  }
   const now = Date.now();
   const threeDays = 1000 * 60 * 60 * 24 * 3;
   return due >= now && due - now <= threeDays;
 }
 
 export function isOverdue(dueDate: string): boolean {
-  return new Date(dueDate).getTime() < Date.now();
+  const due = parseDateValue(dueDate)?.getTime();
+  if (due === undefined) {
+    return false;
+  }
+  return due < Date.now();
 }
 
 export function normalizeTaskStatus(task: RectificationTask): TaskStatus {
@@ -136,18 +161,26 @@ export function summarizeTasks(tasks: RectificationTask[]): DashboardSummary {
 }
 
 export function formatDate(date: string): string {
+  const parsed = parseDateValue(date);
+  if (!parsed) {
+    return "-";
+  }
   return new Intl.DateTimeFormat("ja-JP", {
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(date));
+  }).format(parsed);
 }
 
 export function formatDateTime(date: string): string {
+  const parsed = parseDateValue(date);
+  if (!parsed) {
+    return "-";
+  }
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(date));
+  }).format(parsed);
 }
