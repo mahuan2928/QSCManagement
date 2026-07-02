@@ -83,6 +83,10 @@ const manifestSchema = z.object({
       beforePhotoFieldName: z.string().min(1),
       afterPhotoFieldName: z.string().min(1),
       commentFieldName: z.string().min(1),
+      feedbackCommentFieldName: z.string().min(1),
+      feedbackSubmittedAtFieldName: z.string().min(1),
+      svConfirmationStatusFieldName: z.string().min(1),
+      svConfirmationAtFieldName: z.string().min(1),
     }),
     itemMaster: z.object({
       tableId: z.string().min(1),

@@ -53,7 +53,11 @@
       "dueDateFieldName": "改善期限",
       "beforePhotoFieldName": "改善前写真",
       "afterPhotoFieldName": "改善後写真",
-      "commentFieldName": "コメント"
+      "commentFieldName": "コメント",
+      "feedbackCommentFieldName": "整改結果",
+      "feedbackSubmittedAtFieldName": "整改提出時間",
+      "svConfirmationStatusFieldName": "SV確認状態",
+      "svConfirmationAtFieldName": "SV確認時間"
     },
     "itemMaster": {
       "tableId": "tblQJcMuzwota38S",

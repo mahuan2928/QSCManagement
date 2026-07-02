@@ -36,7 +36,7 @@ export default async function MyFiveCPage() {
               <h3 className="text-lg font-semibold text-white">現在の是正項目</h3>
               <p className="mt-1 text-sm text-zinc-400">最新の対応要求と進捗を確認できます。</p>
             </div>
-            <Link href="/tasks" className="text-sm text-sky-200">
+            <Link href="/tasks" prefetch={false} className="text-sm text-sky-200">
               報告する
             </Link>
           </div>

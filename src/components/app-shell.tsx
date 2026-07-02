@@ -69,6 +69,7 @@ export function AppShell(props: {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
                     active
@@ -119,6 +120,7 @@ export function AppShell(props: {
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={false}
                       className={cn(
                         "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm",
                         active

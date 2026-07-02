@@ -1,8 +1,16 @@
-import { ArrowRight, Building2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowRight, Building2, ShieldCheck } from "lucide-react";
 
 import { appConfig } from "../lib/config";
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const errorValue = resolvedSearchParams.error;
+  const error = Array.isArray(errorValue) ? errorValue[0] : errorValue;
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(30,144,255,0.28),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(34,197,94,0.16),_transparent_24%),linear-gradient(180deg,_#07101d_0%,_#0f1728_42%,_#131e33_100%)] px-4 py-10 text-white sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -25,6 +33,12 @@ export default function Home() {
               </div>
             ))}
           </div>
+          {error ? (
+            <div className="mt-6 flex items-start gap-3 rounded-3xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              <p>ログインに失敗しました。{decodeURIComponent(error)}</p>
+            </div>
+          ) : null}
         </section>
 
         <section className="rounded-[36px] border border-white/10 bg-slate-950/45 p-6 backdrop-blur sm:p-8">

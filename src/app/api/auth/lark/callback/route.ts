@@ -38,24 +38,49 @@ function toCandidateValues(value: unknown): string[] {
 }
 
 async function searchStoreRecords(accessToken: string, tableId: string) {
-  const response = await fetch(
-    `${appConfig.larkOpenApiBaseUrl}/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${tableId}/records/search`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json; charset=utf-8",
+  const items: LarkStoreRecord[] = [];
+  let pageToken: string | undefined;
+
+  while (true) {
+    const response = await fetch(
+      `${appConfig.larkOpenApiBaseUrl}/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${tableId}/records/search`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({ page_size: 500, ...(pageToken ? { page_token: pageToken } : {}) }),
+        cache: "no-store",
       },
-      body: JSON.stringify({ page_size: 500 }),
-      cache: "no-store",
-    },
-  );
+    );
 
-  if (!response.ok) {
-    throw new Error("`店舗マスター` の取得に失敗したため、本番モードのロール判定ができません。");
+    if (!response.ok) {
+      throw new Error("`店舗マスター` の取得に失敗したため、本番モードのロール判定ができません。");
+    }
+
+    const json = (await response.json()) as BitableResponse<{
+      items?: LarkStoreRecord[];
+      has_more?: boolean;
+      page_token?: string;
+    }>;
+
+    if (json.code !== 0) {
+      return json;
+    }
+
+    items.push(...(json.data?.items ?? []));
+    if (!json.data?.has_more || !json.data.page_token) {
+      return {
+        code: 0,
+        data: {
+          items,
+        },
+      };
+    }
+
+    pageToken = json.data.page_token;
   }
-
-  return (await response.json()) as BitableResponse<{ items?: LarkStoreRecord[] }>;
 }
 
 async function resolveStoreTableId(accessToken: string) {
@@ -92,7 +117,7 @@ async function resolveStoreTableId(accessToken: string) {
   return matched.table_id;
 }
 
-async function resolveRole(accessToken: string, openId: string, name: string) {
+async function resolveRole(accessToken: string, openId: string, userId: string | undefined, name: string) {
   let json = await searchStoreRecords(accessToken, appConfig.larkStoreTableId);
 
   if (json.code !== 0 && json.msg === "WrongTableId") {
@@ -110,7 +135,7 @@ async function resolveRole(accessToken: string, openId: string, name: string) {
       ...toCandidateValues(record.fields[appConfig.storeOwnerFieldId]),
       ...toCandidateValues(record.fields["店舗ユーザーID"]),
     ];
-    return ownerCandidates.includes(openId) || ownerCandidates.includes(name);
+    return ownerCandidates.includes(openId) || (!!userId && ownerCandidates.includes(userId));
   });
   if (storeRecord) {
     return buildProductionSession({
@@ -120,6 +145,7 @@ async function resolveRole(accessToken: string, openId: string, name: string) {
       storeId: storeRecord.record_id,
       storeName: `${storeRecord.fields["店舗名"] ?? name}`,
       larkOpenId: openId,
+      larkUserId: userId,
     });
   }
 
@@ -129,7 +155,7 @@ async function resolveRole(accessToken: string, openId: string, name: string) {
       ...toCandidateValues(record.fields["SVユーザーID"]),
       ...toCandidateValues(record.fields["SV"]),
     ];
-    return ownerCandidates.includes(openId) || ownerCandidates.includes(name);
+    return ownerCandidates.includes(openId) || (!!userId && ownerCandidates.includes(userId));
   });
   if (svRecord) {
     return buildProductionSession({
@@ -138,6 +164,7 @@ async function resolveRole(accessToken: string, openId: string, name: string) {
       name,
       svCode: `${svRecord.fields[appConfig.svOwnerFieldId] ?? openId}`,
       larkOpenId: openId,
+      larkUserId: userId,
     });
   }
 
@@ -160,7 +187,7 @@ export async function GET(request: Request) {
   try {
     const token = await larkAuthClient.requestToken(code);
     const userInfo = await larkAuthClient.requestUserInfo(token.access_token);
-    const session = await resolveRole(token.access_token, userInfo.open_id, userInfo.name);
+    const session = await resolveRole(token.access_token, userInfo.open_id, userInfo.user_id, userInfo.name);
 
     await setSession(session);
     await setLarkUserAccessToken(token.access_token);

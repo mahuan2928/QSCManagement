@@ -39,6 +39,8 @@ interface LarkRecord {
 
 interface ListRecordsResponse {
   items?: LarkRecord[];
+  page_token?: string;
+  has_more?: boolean;
 }
 
 interface LarkField {
@@ -49,43 +51,117 @@ interface LarkField {
   ui_type?: string;
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class LarkBaseRepository implements BaseRepository {
+  private readonly recordListCache = new Map<string, Promise<LarkRecord[]>>();
+
+  private readonly accessibleStoreRecordsCache = new Map<string, Promise<LarkRecord[]>>();
+
+  private activeRequests = 0;
+
+  private readonly requestQueue: Array<() => void> = [];
+
   constructor(private readonly userAccessToken: string) {}
 
+  private async withRequestSlot<T>(task: () => Promise<T>): Promise<T> {
+    const maxConcurrentRequests = 2;
+
+    if (this.activeRequests >= maxConcurrentRequests) {
+      await new Promise<void>((resolve) => {
+        this.requestQueue.push(resolve);
+      });
+    }
+
+    this.activeRequests += 1;
+
+    try {
+      return await task();
+    } finally {
+      this.activeRequests -= 1;
+      const next = this.requestQueue.shift();
+      next?.();
+    }
+  }
+
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(`${appConfig.larkOpenApiBaseUrl}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${this.userAccessToken}`,
-        "Content-Type": "application/json; charset=utf-8",
-        ...(init?.headers ?? {}),
-      },
-      cache: "no-store",
-    });
+    const maxAttempts = 3;
 
-    if (!response.ok) {
-      const detail = await response.text();
-      throw new Error(`Lark OpenAPI リクエストに失敗しました: ${response.status} ${detail}`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const response = await this.withRequestSlot(() =>
+        fetch(`${appConfig.larkOpenApiBaseUrl}${path}`, {
+          ...init,
+          headers: {
+            Authorization: `Bearer ${this.userAccessToken}`,
+            "Content-Type": "application/json; charset=utf-8",
+            ...(init?.headers ?? {}),
+          },
+          cache: "no-store",
+        }),
+      );
+
+      const rawText = await response.text();
+      let json: { code?: number; data?: T; msg?: string } | null = null;
+      try {
+        json = rawText ? (JSON.parse(rawText) as { code?: number; data?: T; msg?: string }) : null;
+      } catch {
+        json = null;
+      }
+
+      const rateLimited = response.status === 429 || json?.msg === "TooManyRequest";
+      if (rateLimited && attempt < maxAttempts) {
+        await sleep(250 * 2 ** (attempt - 1));
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Lark OpenAPI リクエストに失敗しました: ${response.status} ${rawText}`);
+      }
+
+      if (json?.code && json.code !== 0) {
+        throw new Error(json.msg ?? "Lark OpenAPI 返回异常。");
+      }
+
+      return (json?.data ?? json) as T;
     }
 
-    const json = (await response.json()) as { code?: number; data?: T; msg?: string };
-    if (json.code && json.code !== 0) {
-      throw new Error(json.msg ?? "Lark OpenAPI 返回异常。");
-    }
-
-    return (json.data ?? json) as T;
+    throw new Error("Lark OpenAPI リクエストに失敗しました。");
   }
 
   private async listRecords(tableId: string): Promise<LarkRecord[]> {
-    const data = await this.request<ListRecordsResponse>(
-      `/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${tableId}/records/search`,
-      {
-        method: "POST",
-        body: JSON.stringify({ page_size: 500 }),
-      },
-    );
+    const cached = this.recordListCache.get(tableId);
+    if (cached) {
+      return cached;
+    }
 
-    return data.items ?? [];
+    const requestPromise = (async () => {
+      const items: LarkRecord[] = [];
+      let pageToken: string | undefined;
+
+      do {
+        const data = await this.request<ListRecordsResponse>(
+          `/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${tableId}/records/search`,
+          {
+            method: "POST",
+            body: JSON.stringify({ page_size: 500, ...(pageToken ? { page_token: pageToken } : {}) }),
+          },
+        );
+
+        items.push(...(data.items ?? []));
+        pageToken = data.has_more ? data.page_token : undefined;
+      } while (pageToken);
+
+      return items;
+    })()
+      .catch((error) => {
+        this.recordListCache.delete(tableId);
+        throw error;
+      });
+
+    this.recordListCache.set(tableId, requestPromise);
+    return requestPromise;
   }
 
   private async listFields(tableId: string): Promise<LarkField[]> {
@@ -111,6 +187,7 @@ export class LarkBaseRepository implements BaseRepository {
         body: JSON.stringify({ fields }),
       },
     );
+    this.recordListCache.delete(tableId);
   }
 
   private async updateRecord(tableId: string, recordId: string, fields: Record<string, unknown>) {
@@ -121,6 +198,7 @@ export class LarkBaseRepository implements BaseRepository {
         body: JSON.stringify({ fields }),
       },
     );
+    this.recordListCache.delete(tableId);
   }
 
   private coerceText(value: unknown): string {
@@ -130,6 +208,10 @@ export class LarkBaseRepository implements BaseRepository {
 
     if (typeof value === "number") {
       return `${value}`;
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "true" : "false";
     }
 
     return "";
@@ -150,10 +232,12 @@ export class LarkBaseRepository implements BaseRepository {
     }
 
     return value.map((item, index) => {
-      const typed = item as { name?: string; url?: string; tmp_url?: string };
+      const typed = item as { name?: string; url?: string; tmp_url?: string; file_token?: string };
       return {
         name: typed.name ?? `画像-${index + 1}`,
-        url: typed.url ?? typed.tmp_url ?? "",
+        url: typed.file_token
+          ? `/api/lark/media/${encodeURIComponent(typed.file_token)}`
+          : typed.url ?? typed.tmp_url ?? "",
       };
     });
   }
@@ -214,13 +298,26 @@ export class LarkBaseRepository implements BaseRepository {
     return "Q1";
   }
 
+  private mapPhotoForLark(photo: UploadedPhoto) {
+    if (photo.fileToken) {
+      return {
+        file_token: photo.fileToken,
+      };
+    }
+
+    return {
+      name: photo.name,
+      url: photo.url,
+    };
+  }
+
   private getAccessibleStore(store: LarkRecord, user: SessionUser) {
     if (user.role === "sv") {
       const ownerCandidates = [
         ...this.toCandidateValues(store.fields[appConfig.svOwnerFieldId]),
         ...this.toCandidateValues(store.fields["SV"]),
       ];
-      const userCandidates = [user.larkOpenId, user.svCode, user.name].filter(
+      const userCandidates = [user.larkOpenId, user.larkUserId, user.svCode].filter(
         (value): value is string => Boolean(value),
       );
       return userCandidates.some((value) => ownerCandidates.includes(value));
@@ -230,16 +327,28 @@ export class LarkBaseRepository implements BaseRepository {
       ...this.toCandidateValues(store.fields[appConfig.storeOwnerFieldId]),
       ...this.toCandidateValues(store.fields["店舗ユーザーID"]),
     ];
-    const userCandidates = [user.larkOpenId, user.storeId, user.name].filter(
+    const userCandidates = [user.larkOpenId, user.larkUserId, user.storeId].filter(
       (value): value is string => Boolean(value),
     );
     return userCandidates.some((value) => ownerCandidates.includes(value));
   }
 
   private async getAccessibleStoreRecords(user: SessionUser): Promise<LarkRecord[]> {
-    return (await this.listRecords(appConfig.larkStoreTableId)).filter((record) =>
-      this.getAccessibleStore(record, user),
-    );
+    const cacheKey = `${user.role}:${user.id}`;
+    const cached = this.accessibleStoreRecordsCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const requestPromise = this.listRecords(appConfig.larkStoreTableId)
+      .then((records) => records.filter((record) => this.getAccessibleStore(record, user)))
+      .catch((error) => {
+        this.accessibleStoreRecordsCache.delete(cacheKey);
+        throw error;
+      });
+
+    this.accessibleStoreRecordsCache.set(cacheKey, requestPromise);
+    return requestPromise;
   }
 
   private mapStore(record: LarkRecord): Store {
@@ -273,13 +382,6 @@ export class LarkBaseRepository implements BaseRepository {
       ),
       hygienePreviousScore: this.coerceNumber(record.fields[storeFields.hygienePreviousScoreFieldName]),
     };
-  }
-
-  private resolveStoreForRecord(record: LarkRecord, stores: Store[]): Store | undefined {
-    const linkedStoreId = this.coerceTextArray(record.fields["店舗"])[0];
-    const storeName = this.coerceText(record.fields["店舗名"]);
-
-    return stores.find((store) => store.id === linkedStoreId || store.name === storeName);
   }
 
   private hasResolvedChecklistMappings(definitions: typeof productionMinimumChecklist) {
@@ -440,9 +542,11 @@ export class LarkBaseRepository implements BaseRepository {
   }
 
   async getSvDashboard(user: SessionUser): Promise<SvDashboardData> {
-    const stores = await this.getStoresForSv(user);
-    const tasks = await this.listTasks(user);
-    const recentResults = await this.getRecentResults(user);
+    const [stores, tasks, recentResults] = await Promise.all([
+      this.getStoresForSv(user),
+      this.listTasks(user),
+      this.getRecentResults(user),
+    ]);
     return { stores, tasks, recentResults, summary: summarizeTasks(tasks) };
   }
 
@@ -452,12 +556,12 @@ export class LarkBaseRepository implements BaseRepository {
     if (!store) {
       throw new Error("現在の店舗が見つかりません。`店舗ユーザーID` と Lark アカウントの紐付けを確認してください。");
     }
-    const history = await this.getRecentResults(user);
+    const [history, openTasks] = await Promise.all([this.getRecentResults(user), this.listTasks(user)]);
     return {
       store,
       latestResult: history[0],
       history,
-      openTasks: await this.listTasks(user),
+      openTasks,
     };
   }
 
@@ -492,9 +596,8 @@ export class LarkBaseRepository implements BaseRepository {
           record.fields["改善ステータス"] ?? record.fields["改善ステータス "],
         ).toLowerCase();
         const feedbackComment = this.coerceText(
-          record.fields["整改結果"] ??
-            record.fields["整改结果"] ??
-            record.fields[productionBaseManifest.tables.issues.commentFieldName],
+          record.fields[productionBaseManifest.tables.issues.feedbackCommentFieldName] ??
+            record.fields["整改结果"],
         );
 
         const task: RectificationTask = {
@@ -543,7 +646,7 @@ export class LarkBaseRepository implements BaseRepository {
           ),
           feedbackComment,
           feedbackSubmittedAt:
-            this.coerceText(record.fields["整改提出時間"]) ||
+            this.coerceText(record.fields[productionBaseManifest.tables.issues.feedbackSubmittedAtFieldName]) ||
             this.coerceText(record.fields["整改提交时间"]),
           history: [],
         };
@@ -561,7 +664,19 @@ export class LarkBaseRepository implements BaseRepository {
     }
     if (query?.search) {
       const keyword = query.search.toLowerCase();
-      tasks = tasks.filter((task) => task.storeName.toLowerCase().includes(keyword));
+      tasks = tasks.filter((task) =>
+        [
+          task.storeName,
+          task.issueType,
+          task.comment,
+          task.sourceItemKey,
+          task.improvementPlan,
+          task.feedbackComment ?? "",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(keyword),
+      );
     }
     return tasks;
   }
@@ -577,17 +692,70 @@ export class LarkBaseRepository implements BaseRepository {
 
   async getRecentResults(user: SessionUser): Promise<FiveCResult[]> {
     const stores = (await this.getAccessibleStoreRecords(user)).map((record) => this.mapStore(record));
-    const minimumRecords = await this.listRecords(appConfig.larkMinimumTableId);
-    const operationRecords = await this.listRecords(appConfig.larkOperationTableId);
-    const valueRecords = await this.listRecords(appConfig.larkValueTableId);
+    const [minimumRecords, operationRecords, valueRecords] = await Promise.all([
+      this.listRecords(appConfig.larkMinimumTableId),
+      this.listRecords(appConfig.larkOperationTableId),
+      this.listRecords(appConfig.larkValueTableId),
+    ]);
+
+    const storeById = new Map(stores.map((store) => [store.id, store]));
+    const storeByName = new Map(stores.map((store) => [store.name, store]));
+    const latestMinimumByStoreId = new Map<string, LarkRecord>();
+    const operationByStoreAndDate = new Map<string, LarkRecord>();
+    const valueByStoreAndDate = new Map<string, LarkRecord>();
+
+    const resolveStore = (record: LarkRecord) => {
+      const linkedStoreId = this.coerceTextArray(record.fields["店舗"])[0];
+      const storeName = this.coerceText(record.fields["店舗名"]);
+      return (linkedStoreId ? storeById.get(linkedStoreId) : undefined) ?? storeByName.get(storeName);
+    };
+
+    const buildStoreDateKey = (storeId: string, auditDate: string) => `${storeId}::${auditDate}`;
+
+    for (const record of minimumRecords) {
+      const store = resolveStore(record);
+      if (!store) {
+        continue;
+      }
+
+      const auditDate = this.coerceText(record.fields["対応日"]);
+      const previous = latestMinimumByStoreId.get(store.id);
+      if (!previous || this.coerceText(previous.fields["対応日"]).localeCompare(auditDate) < 0) {
+        latestMinimumByStoreId.set(store.id, record);
+      }
+    }
+
+    for (const record of operationRecords) {
+      const store = resolveStore(record);
+      if (!store) {
+        continue;
+      }
+
+      const auditDate = this.coerceText(record.fields["対応日"]);
+      const key = buildStoreDateKey(store.id, auditDate);
+      const previous = operationByStoreAndDate.get(key);
+      if (!previous || this.coerceText(previous.fields["対応日"]).localeCompare(auditDate) < 0) {
+        operationByStoreAndDate.set(key, record);
+      }
+    }
+
+    for (const record of valueRecords) {
+      const store = resolveStore(record);
+      if (!store) {
+        continue;
+      }
+
+      const auditDate = this.coerceText(record.fields["対応日"]);
+      const key = buildStoreDateKey(store.id, auditDate);
+      const previous = valueByStoreAndDate.get(key);
+      if (!previous || this.coerceText(previous.fields["対応日"]).localeCompare(auditDate) < 0) {
+        valueByStoreAndDate.set(key, record);
+      }
+    }
 
     return stores
       .flatMap((store) => {
-        const minimumRecord = minimumRecords
-          .filter((record) => this.resolveStoreForRecord(record, [store])?.id === store.id)
-          .sort((left, right) =>
-            this.coerceText(right.fields["対応日"]).localeCompare(this.coerceText(left.fields["対応日"])),
-          )[0];
+        const minimumRecord = latestMinimumByStoreId.get(store.id);
 
         if (!minimumRecord) {
           return [];
@@ -600,22 +768,9 @@ export class LarkBaseRepository implements BaseRepository {
         const cycle = this.coerceCycle(
           minimumRecord.fields[productionBaseManifest.tables.issues.cycleFieldName],
         );
-        const operationRecord = operationRecords
-          .filter((record) => {
-            const resolvedStore = this.resolveStoreForRecord(record, [store]);
-            return resolvedStore?.id === store.id && this.coerceText(record.fields["対応日"]) === auditDate;
-          })
-          .sort((left, right) =>
-            this.coerceText(right.fields["対応日"]).localeCompare(this.coerceText(left.fields["対応日"])),
-          )[0];
-        const valueRecord = valueRecords
-          .filter((record) => {
-            const resolvedStore = this.resolveStoreForRecord(record, [store]);
-            return resolvedStore?.id === store.id && this.coerceText(record.fields["対応日"]) === auditDate;
-          })
-          .sort((left, right) =>
-            this.coerceText(right.fields["対応日"]).localeCompare(this.coerceText(left.fields["対応日"])),
-          )[0];
+        const storeDateKey = buildStoreDateKey(store.id, auditDate);
+        const operationRecord = operationByStoreAndDate.get(storeDateKey);
+        const valueRecord = valueByStoreAndDate.get(storeDateKey);
         const operationScore = operationRecord
           ? this.coerceNumber(operationRecord.fields[productionBaseManifest.tables.operation.scoreFieldName])
           : 0;
@@ -848,10 +1003,9 @@ export class LarkBaseRepository implements BaseRepository {
         [productionBaseManifest.tables.issues.commentFieldName]: task.comment,
         担当者: task.assignee,
         SV: user.name,
-        [productionBaseManifest.tables.issues.beforePhotoFieldName]: (task.beforePhotos ?? []).map((photo) => ({
-          name: photo.name,
-          url: photo.url,
-        })),
+        [productionBaseManifest.tables.issues.beforePhotoFieldName]: (task.beforePhotos ?? []).map((photo) =>
+          this.mapPhotoForLark(photo),
+        ),
       });
     }
 
@@ -884,12 +1038,11 @@ export class LarkBaseRepository implements BaseRepository {
     input: SubmitFeedbackInput,
   ): Promise<RectificationTask> {
     await this.updateRecord(appConfig.larkIssueTableId, taskId, {
-      [productionBaseManifest.tables.issues.commentFieldName]: input.comment,
-      整改提出時間: new Date().toISOString(),
-      [productionBaseManifest.tables.issues.afterPhotoFieldName]: input.photos.map((photo) => ({
-        name: photo.name,
-        url: photo.url,
-      })),
+      [productionBaseManifest.tables.issues.feedbackCommentFieldName]: input.comment,
+      [productionBaseManifest.tables.issues.feedbackSubmittedAtFieldName]: new Date().toISOString(),
+      [productionBaseManifest.tables.issues.afterPhotoFieldName]: input.photos.map((photo) =>
+        this.mapPhotoForLark(photo),
+      ),
       改善ステータス: "submitted",
     });
 
@@ -910,8 +1063,8 @@ export class LarkBaseRepository implements BaseRepository {
   async markTaskResolved(_user: SessionUser, taskId: string): Promise<RectificationTask> {
     await this.updateRecord(appConfig.larkIssueTableId, taskId, {
       改善ステータス: "resolved",
-      SV確認状態: "approved",
-      SV確認時間: new Date().toISOString(),
+      [productionBaseManifest.tables.issues.svConfirmationStatusFieldName]: "approved",
+      [productionBaseManifest.tables.issues.svConfirmationAtFieldName]: new Date().toISOString(),
     });
 
     const task = await this.getTask(_user, taskId);

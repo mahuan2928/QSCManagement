@@ -104,6 +104,7 @@ export interface FiveCResult {
 export interface UploadedPhoto {
   name: string;
   url: string;
+  fileToken?: string;
 }
 
 export interface RectificationFeedback {

@@ -1,20 +1,17 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { requireSession } from "../../../../../lib/auth/session";
+import type { UploadedPhoto } from "../../../../../lib/domain";
 import { getRepositoryForSession } from "../../../../../lib/repositories";
 
-const schema = z.object({
-  comment: z.string().min(1, "是正コメントを入力してください。"),
-  photos: z
-    .array(
-      z.object({
-        name: z.string(),
-        url: z.string().min(1),
-      }),
-    )
-    .min(1, "改善後写真を 1 枚以上アップロードしてください。"),
-});
+async function fileToUploadedPhoto(file: File): Promise<UploadedPhoto> {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const mimeType = file.type || "application/octet-stream";
+  return {
+    name: file.name,
+    url: `data:${mimeType};base64,${buffer.toString("base64")}`,
+  };
+}
 
 export async function POST(
   request: Request,
@@ -25,7 +22,24 @@ export async function POST(
   const params = await context.params;
 
   try {
-    const payload = schema.parse(await request.json());
+    const formData = await request.formData();
+    const comment = `${formData.get("comment") ?? ""}`.trim();
+    const files = formData
+      .getAll("photos")
+      .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+
+    if (!comment) {
+      return NextResponse.json({ error: "是正コメントを入力してください。" }, { status: 400 });
+    }
+
+    if (files.length === 0) {
+      return NextResponse.json({ error: "改善後写真を 1 枚以上アップロードしてください。" }, { status: 400 });
+    }
+
+    const payload = {
+      comment,
+      photos: await Promise.all(files.map((file) => fileToUploadedPhoto(file))),
+    };
     const task = await repository.submitTaskFeedback(user, params.id, payload);
     return NextResponse.json(task);
   } catch (error) {

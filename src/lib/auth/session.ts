@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -8,6 +9,13 @@ import type { SessionMode, SessionUser, UserRole } from "../domain";
 
 const SESSION_COOKIE = "r5c_session";
 const LARK_ACCESS_TOKEN_COOKIE = "r5c_lark_uat";
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ?? process.env.R5C_SESSION_SECRET ?? process.env.LARK_APP_SECRET ?? "dev-session-secret";
+const COOKIE_SECURE = process.env.NODE_ENV === "production";
+
+function signValue(value: string) {
+  return createHmac("sha256", SESSION_SECRET).update(value).digest("base64url");
+}
 
 function decodeSession(value: string | undefined): SessionUser | null {
   if (!value) {
@@ -15,14 +23,28 @@ function decodeSession(value: string | undefined): SessionUser | null {
   }
 
   try {
-    return JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as SessionUser;
+    const [payload, signature] = value.split(".");
+    if (!payload || !signature) {
+      return null;
+    }
+
+    const expected = signValue(payload);
+    if (
+      expected.length !== signature.length ||
+      !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+    ) {
+      return null;
+    }
+
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionUser;
   } catch {
     return null;
   }
 }
 
 function encodeSession(session: SessionUser): string {
-  return Buffer.from(JSON.stringify(session), "utf8").toString("base64url");
+  const payload = Buffer.from(JSON.stringify(session), "utf8").toString("base64url");
+  return `${payload}.${signValue(payload)}`;
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -49,7 +71,7 @@ export async function setSession(session: SessionUser) {
   cookieStore.set(SESSION_COOKIE, encodeSession(session), {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: COOKIE_SECURE,
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });
@@ -86,7 +108,7 @@ export async function setLarkUserAccessToken(token: string) {
   cookieStore.set(LARK_ACCESS_TOKEN_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: COOKIE_SECURE,
     path: "/",
     maxAge: 60 * 60 * 2,
   });

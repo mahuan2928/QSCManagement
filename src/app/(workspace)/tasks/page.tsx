@@ -17,15 +17,16 @@ export default async function TasksPage({
   const storeId = Array.isArray(storeIdValue) ? storeIdValue[0] : storeIdValue;
   const status = (Array.isArray(statusValue) ? statusValue[0] : statusValue) as TaskStatus | "all" | undefined;
   const search = Array.isArray(searchValue) ? searchValue[0] : searchValue;
-  const tasks = await repository.listTasks(user, {
-    storeId: storeId ?? undefined,
-    status: status ?? undefined,
-    search: search ?? undefined,
-  });
-  const stores =
+  const [tasks, stores] = await Promise.all([
+    repository.listTasks(user, {
+      storeId: storeId ?? undefined,
+      status: status ?? undefined,
+      search: search ?? undefined,
+    }),
     user.role === "sv"
-      ? await repository.getStoresForSv(user)
-      : [(await repository.getStoreWorkbench(user)).store];
+      ? repository.getStoresForSv(user)
+      : repository.getStoreWorkbench(user).then((workbench) => [workbench.store]),
+  ]);
 
   return (
     <div className="space-y-4">

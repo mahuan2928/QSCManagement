@@ -28,7 +28,7 @@ export default async function SvDashboardPage() {
               <h2 className="text-lg font-semibold text-white">担当店舗</h2>
               <p className="mt-1 text-sm text-zinc-400">権限範囲内で閲覧可能な店舗のみ表示します。</p>
             </div>
-            <Link href="/sv/audits/new" className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950">
+            <Link href="/sv/audits/new" prefetch={false} className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950">
               評価を開始
             </Link>
           </div>
@@ -61,7 +61,7 @@ export default async function SvDashboardPage() {
               <h2 className="text-lg font-semibold text-white">是正課題</h2>
               <p className="mt-1 text-sm text-zinc-400">詳細確認とフォローアップに遷移できます。</p>
             </div>
-            <Link href="/tasks" className="text-sm text-sky-200">
+            <Link href="/tasks" prefetch={false} className="text-sm text-sky-200">
               すべて見る
             </Link>
           </div>

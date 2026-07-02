@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   response.cookies.set("r5c_lark_state", state, {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 10,
   });

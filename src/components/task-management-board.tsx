@@ -1,26 +1,22 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { CalendarClock, Camera, CircleCheckBig, Search } from "lucide-react";
 
 import { formatDateTime, isDueSoon, isOverdue } from "../lib/business-rules";
 import type { RectificationTask, SessionUser, Store, TaskStatus, UploadedPhoto } from "../lib/domain";
 import { StatusBadge } from "./status-badge";
 
-async function filesToDataUrls(fileList: FileList): Promise<UploadedPhoto[]> {
-  const files = Array.from(fileList);
-  return Promise.all(
-    files.map(
-      (file) =>
-        new Promise<UploadedPhoto>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            resolve({ name: file.name, url: `${reader.result ?? ""}` });
-          };
-          reader.readAsDataURL(file);
-        }),
-    ),
-  );
+function toPreviewPhotos(files: File[]): UploadedPhoto[] {
+  return files.map((file) => ({
+    name: file.name,
+    url: URL.createObjectURL(file),
+  }));
+}
+
+function replaceTask(tasks: RectificationTask[], nextTask: RectificationTask) {
+  return tasks.map((task) => (task.id === nextTask.id ? nextTask : task));
 }
 
 export function TaskManagementBoard(props: {
@@ -31,20 +27,23 @@ export function TaskManagementBoard(props: {
   initialStatus?: TaskStatus | "all";
   initialKeyword?: string;
 }) {
+  const router = useRouter();
+  const [tasks, setTasks] = useState(props.tasks);
   const [selectedTaskId, setSelectedTaskId] = useState(props.tasks[0]?.id);
   const [status, setStatus] = useState<TaskStatus | "all">(props.initialStatus ?? "all");
   const [storeId, setStoreId] = useState(props.initialStoreId ?? "all");
   const [keyword, setKeyword] = useState(props.initialKeyword ?? "");
   const [comment, setComment] = useState("");
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
 
   const filteredTasks = useMemo(() => {
-    return props.tasks.filter((task) => {
+    return tasks.filter((task) => {
       const keywordMatched =
         !keyword ||
-        [task.storeName, task.issueType, task.comment]
+        [task.storeName, task.issueType, task.comment, task.feedbackComment ?? ""]
           .join(" ")
           .toLowerCase()
           .includes(keyword.toLowerCase());
@@ -52,7 +51,7 @@ export function TaskManagementBoard(props: {
       const statusMatched = status === "all" || task.status === status;
       return keywordMatched && storeMatched && statusMatched;
     });
-  }, [keyword, props.tasks, status, storeId]);
+  }, [keyword, status, storeId, tasks]);
 
   const selectedTask =
     filteredTasks.find((task) => task.id === selectedTaskId) ?? filteredTasks[0] ?? null;
@@ -64,10 +63,15 @@ export function TaskManagementBoard(props: {
 
     startTransition(async () => {
       setMessage("");
+      const formData = new FormData();
+      formData.set("comment", comment);
+      photoFiles.forEach((file) => {
+        formData.append("photos", file);
+      });
+
       const response = await fetch(`/api/tasks/${selectedTask.id}/feedback`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comment, photos }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -76,7 +80,13 @@ export function TaskManagementBoard(props: {
         return;
       }
 
-      window.location.reload();
+      const updatedTask = (await response.json()) as RectificationTask;
+      setTasks((current) => replaceTask(current, updatedTask));
+      setComment("");
+      setPhotos([]);
+      setPhotoFiles([]);
+      setMessage("是正報告を送信しました。");
+      router.refresh();
     });
   };
 
@@ -92,7 +102,10 @@ export function TaskManagementBoard(props: {
         setMessage(json.error ?? "ステータス更新に失敗しました。");
         return;
       }
-      window.location.reload();
+      const updatedTask = (await response.json()) as RectificationTask;
+      setTasks((current) => replaceTask(current, updatedTask));
+      setMessage("是正完了に更新しました。");
+      router.refresh();
     });
   };
 
@@ -249,9 +262,11 @@ export function TaskManagementBoard(props: {
                     accept="image/*"
                     multiple
                     className="hidden"
-                    onChange={async (event) => {
+                    onChange={(event) => {
                       if (!event.target.files) return;
-                      setPhotos(await filesToDataUrls(event.target.files));
+                      const files = Array.from(event.target.files);
+                      setPhotoFiles(files);
+                      setPhotos(toPreviewPhotos(files));
                     }}
                   />
                 </label>

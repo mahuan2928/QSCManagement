@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import {
   Bar,
@@ -32,6 +33,7 @@ import {
   Waves,
 } from "lucide-react";
 
+import type { DeferredOverviewPanelsProps } from "@/components/enterprise-dashboard-deferred";
 import { normalizeTaskStatus } from "../lib/business-rules";
 import type { FiveCResult, HygieneInspection, RectificationTask, Store } from "../lib/domain";
 import { cn } from "../lib/utils";
@@ -111,6 +113,29 @@ const ISSUE_CATALOG = [
   "ゴミ分別",
   "手指消毒設置",
 ];
+
+const DeferredOverviewPanels = dynamic<DeferredOverviewPanelsProps>(
+  () => import("@/components/enterprise-dashboard-deferred").then((module) => module.DeferredOverviewPanels),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4">
+        <div className="h-[310px] rounded-lg border border-[#323B48] bg-[#262E3A]" />
+        <div className="grid gap-4 xl:grid-cols-12">
+          <div className="h-[320px] rounded-lg border border-[#323B48] bg-[#262E3A] xl:col-span-6" />
+          <div className="h-[320px] rounded-lg border border-[#323B48] bg-[#262E3A] xl:col-span-3" />
+          <div className="h-[320px] rounded-lg border border-[#323B48] bg-[#262E3A] xl:col-span-3" />
+        </div>
+        <div className="grid gap-4 xl:grid-cols-12">
+          <div className="h-[260px] rounded-lg border border-[#323B48] bg-[#262E3A] xl:col-span-3" />
+          <div className="h-[260px] rounded-lg border border-[#323B48] bg-[#262E3A] xl:col-span-3" />
+          <div className="h-[260px] rounded-lg border border-[#323B48] bg-[#262E3A] xl:col-span-3" />
+          <div className="h-[260px] rounded-lg border border-[#323B48] bg-[#262E3A] xl:col-span-3" />
+        </div>
+      </div>
+    ),
+  },
+);
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -291,20 +316,6 @@ function SelectField(props: {
   );
 }
 
-function GradeBadge(props: { grade: string }) {
-  return (
-    <span
-      className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium"
-      style={{
-        color: RANK_COLORS[props.grade] ?? COLOR_TOKENS.textPrimary,
-        backgroundColor: `${RANK_COLORS[props.grade] ?? COLOR_TOKENS.accent}1F`,
-      }}
-    >
-      {props.grade}
-    </span>
-  );
-}
-
 function StatusChip(props: { value: "合" | "否" }) {
   const positive = props.value === "合";
   return (
@@ -451,15 +462,6 @@ export function EnterpriseDashboard(props: {
     });
   }, [filteredMetrics]);
 
-  const hygieneNeedsImprovement = useMemo(
-    () =>
-      [...filteredMetrics]
-        .filter((metric) => metric.currentHygiene <= 85)
-        .sort((left, right) => left.currentHygiene - right.currentHygiene)
-        .slice(0, 8),
-    [filteredMetrics],
-  );
-
   const trendData = useMemo(() => {
     return PERIODS.map((period) => {
       const row: Record<string, string | number> = { period: period.label };
@@ -473,66 +475,47 @@ export function EnterpriseDashboard(props: {
     });
   }, [filteredMetrics]);
 
-  const top10 = ranking.slice(0, 10);
-  const worst10 = [...ranking].reverse().slice(0, 10);
-
-  const topIssues = useMemo(() => {
-    const counts = filteredMetrics.flatMap((metric) => metric.tasks).reduce<Record<string, number>>((accumulator, task) => {
-      const key = task.issueType || task.sourceItemKey || ISSUE_CATALOG[0];
-      accumulator[key] = (accumulator[key] ?? 0) + 1;
-      return accumulator;
-    }, {});
-
-    return Object.entries(counts)
-      .map(([label, value]) => ({ label, value }))
-      .sort((left, right) => right.value - left.value)
-      .slice(0, 8);
-  }, [filteredMetrics]);
-
-  const topIssuesByFormat = useMemo(() => {
-    return ["FC", "ロードサイド", "CITY"].reduce<Record<string, Array<{ label: string; value: number }>>>((accumulator, format) => {
-      const counts = filteredMetrics
-        .filter((metric) => metric.format === format)
-        .flatMap((metric) => metric.tasks)
-        .reduce<Record<string, number>>((map, task) => {
-          const key = task.issueType || task.sourceItemKey || ISSUE_CATALOG[0];
-          map[key] = (map[key] ?? 0) + 1;
-          return map;
-        }, {});
-
-      const list = Object.entries(counts)
-        .map(([label, value]) => ({ label, value }))
-        .sort((left, right) => right.value - left.value)
-        .slice(0, 5);
-
-      accumulator[format] = list.length
-        ? list
-        : ISSUE_CATALOG.slice(0, 5).map((label, index) => ({ label, value: 5 - index }));
-      return accumulator;
-    }, {});
-  }, [filteredMetrics]);
-
-  const improvementProgress = useMemo(() => {
-    const baseStores = hygieneNeedsImprovement.length ? hygieneNeedsImprovement : worst10.slice(0, 5);
-    return baseStores.map((metric, index) => {
-      const before = clamp(Math.round((100 - metric.previousHygiene) / 3), 8, 20);
-      const after = clamp(metric.currentHygiene + index, 60, 98);
-      return {
-        storeName: metric.store.name,
-        before,
-        after,
-      };
-    });
-  }, [hygieneNeedsImprovement, worst10]);
-
   const selectedCurrentRank = selectedStore ? ranking.findIndex((metric) => metric.store.id === selectedStore.store.id) + 1 : 0;
   const selectedPreviousRank = selectedStore
     ? previousRanking.findIndex((metric) => metric.store.id === selectedStore.store.id) + 1
     : 0;
   const rankDelta = selectedPreviousRank && selectedCurrentRank ? selectedPreviousRank - selectedCurrentRank : 0;
-  const overallIssueList = topIssues.length
-    ? topIssues
-    : ISSUE_CATALOG.slice(0, 5).map((label, index) => ({ label, value: 5 - index }));
+  const deferredOverviewMetrics = useMemo(
+    () =>
+      filteredMetrics.map((metric) => ({
+        store: {
+          id: metric.store.id,
+          name: metric.store.name,
+        },
+        format: metric.format,
+        area: metric.area,
+        currentHygiene: metric.currentHygiene,
+        previousHygiene: metric.previousHygiene,
+        currentScore: metric.currentScore,
+        grade: metric.grade,
+        tasks: metric.tasks.map((task) => ({
+          issueType: task.issueType,
+          sourceItemKey: task.sourceItemKey,
+        })),
+      })),
+    [filteredMetrics],
+  );
+  const deferredRanking = useMemo(
+    () =>
+      ranking.map((metric) => ({
+        store: {
+          id: metric.store.id,
+          name: metric.store.name,
+        },
+        format: metric.format,
+        area: metric.area,
+        currentScore: metric.currentScore,
+        grade: metric.grade,
+        currentHygiene: metric.currentHygiene,
+        previousHygiene: metric.previousHygiene,
+      })),
+    [ranking],
+  );
 
   const storePointRows = useMemo(() => {
     if (!selectedStore) {
@@ -720,32 +703,9 @@ export function EnterpriseDashboard(props: {
               </div>
             </Panel>
 
-            <Panel
-              title="花王衛生検査 要改善店舗(85点以下)"
-              subtitle="基準線を下回る店舗を抽出"
-              className="xl:col-span-7"
-              legend={<span>基準線 85 点</span>}
-            >
-              <div className="h-[310px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={hygieneNeedsImprovement.map((metric) => ({
-                      ...metric,
-                      storeName: metric.store.name,
-                    }))}
-                    layout="vertical"
-                    margin={{ left: 8, right: 20 }}
-                  >
-                    <CartesianGrid horizontal={false} stroke="#2C333F" />
-                    <XAxis type="number" domain={[0, 100]} tick={{ fill: "#98A2B3", fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="storeName" type="category" width={132} tick={{ fill: "#F2F4F7", fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <Tooltip formatter={tooltipFormatter("点", "衛生検査")} {...chartTooltipProps} />
-                    <ReferenceLine x={85} stroke="#EF4444" strokeDasharray="4 4" />
-                    <Bar dataKey="currentHygiene" fill="#EF4444" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Panel>
+            <div className="xl:col-span-7">
+              <DeferredOverviewPanels metrics={deferredOverviewMetrics} ranking={deferredRanking} mode="hygiene" />
+            </div>
           </section>
 
           <section className="grid gap-4 xl:grid-cols-12">
@@ -780,91 +740,10 @@ export function EnterpriseDashboard(props: {
               </div>
             </Panel>
 
-            <Panel title="評価 TOP10" subtitle="スコア上位店舗" className="xl:col-span-3">
-              <div className="space-y-3">
-                {top10.map((metric, index) => (
-                  <div key={metric.store.id} className="flex items-center justify-between rounded-lg border border-[#323B48] bg-[#1E2530] px-3 py-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-[#F2F4F7]">{index + 1}. {metric.store.name}</p>
-                      <p className="mt-1 text-xs text-[#98A2B3]">{metric.format} / {metric.area}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-[Inter] text-sm font-semibold tabular-nums text-[#F2F4F7]">{metric.currentScore}点</p>
-                      <div className="mt-1">
-                        <GradeBadge grade={metric.grade} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-
-            <Panel title="評価ワースト10" subtitle="優先フォロー店舗" className="xl:col-span-3">
-              <div className="space-y-3">
-                {worst10.map((metric, index) => (
-                  <div key={metric.store.id} className="flex items-center justify-between rounded-lg border border-[#323B48] bg-[#1E2530] px-3 py-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-[#F2F4F7]">{index + 1}. {metric.store.name}</p>
-                      <p className="mt-1 text-xs text-[#98A2B3]">{metric.format} / {metric.area}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-[Inter] text-sm font-semibold tabular-nums text-[#F2F4F7]">{metric.currentScore}点</p>
-                      <div className="mt-1">
-                        <GradeBadge grade={metric.grade} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Panel>
+            <DeferredOverviewPanels metrics={deferredOverviewMetrics} ranking={deferredRanking} mode="ranking" />
           </section>
 
-          <section className="grid gap-4 xl:grid-cols-12">
-            <Panel title="上位改善項目(全体)" subtitle="改善指摘の集中領域" className="xl:col-span-3">
-              <div className="space-y-3">
-                {overallIssueList.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between rounded-lg border border-[#323B48] bg-[#1E2530] px-3 py-3">
-                    <span className="text-sm text-[#F2F4F7]">{item.label}</span>
-                    <span className="font-[Inter] text-sm font-semibold tabular-nums text-[#F2F4F7]">{item.value}件</span>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-
-            {["FC", "ロードサイド", "CITY"].map((format) => (
-              <Panel key={format} title={`上位改善項目(${format})`} subtitle={`${format} の重点改善テーマ`} className="xl:col-span-3">
-                <div className="space-y-3">
-                  {topIssuesByFormat[format].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between rounded-lg border border-[#323B48] bg-[#1E2530] px-3 py-3">
-                      <span className="text-sm text-[#F2F4F7]">{item.label}</span>
-                      <span className="font-[Inter] text-sm font-semibold tabular-nums text-[#F2F4F7]">{item.value}件</span>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-            ))}
-          </section>
-
-          <Panel
-            title="前回要改善店舗の改善進捗(20点以下)"
-            subtitle="前回の重点是正対象店舗に対する before / after 比較"
-            legend={<span>before は重点是正指数</span>}
-          >
-            <div className="h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={improvementProgress}>
-                  <CartesianGrid vertical={false} stroke="#2C333F" />
-                  <XAxis dataKey="storeName" tick={{ fill: "#98A2B3", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#98A2B3", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip {...chartTooltipProps} />
-                  <Legend />
-                  <ReferenceLine y={20} stroke="#EF4444" strokeDasharray="4 4" />
-                  <Bar dataKey="before" name="前回" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="after" name="今回" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Panel>
+          <DeferredOverviewPanels metrics={deferredOverviewMetrics} ranking={deferredRanking} mode="issues" />
         </>
       ) : (
         <>
