@@ -183,6 +183,28 @@ export class LarkBaseRepository implements BaseRepository {
       .filter(Boolean);
   }
 
+  private toCandidateValues(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return value.flatMap((item) => this.toCandidateValues(item));
+    }
+
+    if (typeof value === "string") {
+      return [value];
+    }
+
+    if (typeof value === "number") {
+      return [`${value}`];
+    }
+
+    if (value && typeof value === "object") {
+      return Object.values(value as Record<string, unknown>).flatMap((item) =>
+        this.toCandidateValues(item),
+      );
+    }
+
+    return [];
+  }
+
   private coerceCycle(value: unknown): "Q1" | "Q2" | "Q3" | "Q4" {
     const cycle = this.coerceText(value);
     if (cycle === "Q1" || cycle === "Q2" || cycle === "Q3" || cycle === "Q4") {
@@ -194,14 +216,24 @@ export class LarkBaseRepository implements BaseRepository {
 
   private getAccessibleStore(store: LarkRecord, user: SessionUser) {
     if (user.role === "sv") {
-      const owner = this.coerceText(store.fields[appConfig.svOwnerFieldId] ?? store.fields["SV"]);
-      return owner === user.larkOpenId || owner === user.svCode || owner === user.name;
+      const ownerCandidates = [
+        ...this.toCandidateValues(store.fields[appConfig.svOwnerFieldId]),
+        ...this.toCandidateValues(store.fields["SV"]),
+      ];
+      const userCandidates = [user.larkOpenId, user.svCode, user.name].filter(
+        (value): value is string => Boolean(value),
+      );
+      return userCandidates.some((value) => ownerCandidates.includes(value));
     }
 
-    const owner = this.coerceText(
-      store.fields[appConfig.storeOwnerFieldId] ?? store.fields["店舗ユーザーID"],
+    const ownerCandidates = [
+      ...this.toCandidateValues(store.fields[appConfig.storeOwnerFieldId]),
+      ...this.toCandidateValues(store.fields["店舗ユーザーID"]),
+    ];
+    const userCandidates = [user.larkOpenId, user.storeId, user.name].filter(
+      (value): value is string => Boolean(value),
     );
-    return owner === user.larkOpenId || owner === user.storeId || owner === user.name;
+    return userCandidates.some((value) => ownerCandidates.includes(value));
   }
 
   private async getAccessibleStoreRecords(user: SessionUser): Promise<LarkRecord[]> {
