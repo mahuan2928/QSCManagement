@@ -55,6 +55,11 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+interface LarkUserValue {
+  id?: string;
+  name?: string;
+}
+
 export class LarkBaseRepository implements BaseRepository {
   private readonly recordListCache = new Map<string, Promise<LarkRecord[]>>();
 
@@ -128,6 +133,98 @@ export class LarkBaseRepository implements BaseRepository {
     }
 
     throw new Error("Lark OpenAPI リクエストに失敗しました。");
+  }
+
+  private async getTenantAccessToken(): Promise<string> {
+    const response = await fetch(`${appConfig.larkOpenApiBaseUrl}/open-apis/auth/v3/tenant_access_token/internal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+      },
+      body: JSON.stringify({
+        app_id: appConfig.larkAppId,
+        app_secret: appConfig.larkAppSecret,
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("テナントトークンの取得に失敗しました。");
+    }
+
+    const json = (await response.json()) as { code?: number; msg?: string; tenant_access_token?: string };
+    if (json.code !== 0 || !json.tenant_access_token) {
+      throw new Error(json.msg ?? "テナントトークンの取得に失敗しました。");
+    }
+
+    return json.tenant_access_token;
+  }
+
+  private extractUserIds(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((item) => (item && typeof item === "object" ? (item as LarkUserValue).id : ""))
+      .filter((id): id is string => Boolean(id));
+  }
+
+  private async sendResultToStoreOwners(storeRecord: LarkRecord, result: FiveCResult, tasks: CreateAuditInput["tasks"]) {
+    const recipientIds = [
+      ...this.extractUserIds(storeRecord.fields["店舗アカウント"]),
+      ...this.extractUserIds(storeRecord.fields["管理官"]),
+    ].filter((value, index, array) => array.indexOf(value) === index);
+
+    if (!recipientIds.length || !appConfig.larkAppSecret) {
+      return;
+    }
+
+    const taskCount = tasks.length;
+    const messageText = [
+      `【5C評価結果通知】`,
+      `店舗: ${result.storeName}`,
+      `評価日: ${result.auditDate}`,
+      `クール: ${result.cycle}`,
+      `最低遵守: ${result.minimumScore}点 (${result.minimumGrade})`,
+      `運営基準: ${result.operationScore}点`,
+      `価値創造: ${result.valueScore}点`,
+      `総合点: ${result.totalScore}点`,
+      `是正タスク: ${taskCount}件`,
+      `${new URL(appConfig.larkRedirectUri).origin}/store/my-5c`,
+    ].join("\n");
+
+    const tenantAccessToken = await this.getTenantAccessToken();
+
+    await Promise.all(
+      recipientIds.map(async (recipientId) => {
+        const response = await fetch(
+          `${appConfig.larkOpenApiBaseUrl}/open-apis/im/v1/messages?receive_id_type=open_id`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${tenantAccessToken}`,
+              "Content-Type": "application/json; charset=utf-8",
+            },
+            body: JSON.stringify({
+              receive_id: recipientId,
+              msg_type: "text",
+              content: JSON.stringify({ text: messageText }),
+            }),
+            cache: "no-store",
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`通知送信に失敗しました: ${response.status}`);
+        }
+
+        const json = (await response.json()) as { code?: number; msg?: string };
+        if (json.code !== 0) {
+          throw new Error(json.msg ?? "通知送信に失敗しました。");
+        }
+      }),
+    );
   }
 
   private async listRecords(tableId: string): Promise<LarkRecord[]> {
@@ -890,8 +987,9 @@ export class LarkBaseRepository implements BaseRepository {
   }
 
   async createAudit(user: SessionUser, input: CreateAuditInput): Promise<FiveCResult> {
-    const accessibleStores = (await this.getAccessibleStoreRecords(user)).map((record) => this.mapStore(record));
-    const store = accessibleStores.find((item) => item.id === input.storeId);
+    const accessibleStoreRecords = await this.getAccessibleStoreRecords(user);
+    const storeRecord = accessibleStoreRecords.find((record) => this.mapStore(record).id === input.storeId);
+    const store = storeRecord ? this.mapStore(storeRecord) : undefined;
     if (!store) {
       throw new Error("指定した店舗への書き込み権限がありません。");
     }
@@ -1009,7 +1107,7 @@ export class LarkBaseRepository implements BaseRepository {
       });
     }
 
-    return {
+    const result: FiveCResult = {
       id: `submitted-${Date.now()}`,
       storeId: store.id,
       storeName: store.name,
@@ -1030,6 +1128,14 @@ export class LarkBaseRepository implements BaseRepository {
       operationAuditId,
       valueAuditId,
     };
+
+    if (storeRecord) {
+      void this.sendResultToStoreOwners(storeRecord, result, input.tasks).catch((error) => {
+        console.error("Failed to notify store owners after audit submission:", error);
+      });
+    }
+
+    return result;
   }
 
   async submitTaskFeedback(
