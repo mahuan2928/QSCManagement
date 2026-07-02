@@ -705,6 +705,7 @@ export class LarkBaseRepository implements BaseRepository {
           category,
           sourceItemKey,
           issueType:
+            surveyType ||
             this.coerceText(record.fields[productionBaseManifest.tables.issues.typeFieldName]) ||
             sourceItemKey,
           comment: this.coerceText(record.fields[productionBaseManifest.tables.issues.commentFieldName]),

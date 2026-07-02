@@ -167,7 +167,7 @@ export function TaskManagementBoard(props: {
                 <StatusBadge status={task.status} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
-                <span>期限 {formatDateTime(task.dueDate)}</span>
+                <span>期限 {formatDateTime(task.auditDate)}</span>
                 {isDueSoon(task.dueDate) && task.status === "open" ? <span>3日以内に期限到来</span> : null}
                 {isOverdue(task.dueDate) && task.status !== "resolved" ? <span>期限超過</span> : null}
               </div>
@@ -197,11 +197,11 @@ export function TaskManagementBoard(props: {
                   <CalendarClock className="size-4 text-sky-200" />
                   期限
                 </div>
-                <p className="mt-2 text-sm text-white">{formatDateTime(selectedTask.dueDate)}</p>
+                <p className="mt-2 text-sm text-white">{formatDateTime(selectedTask.auditDate)}</p>
               </div>
               <div className="rounded-2xl border border-white/8 bg-slate-950/35 p-3">
                 <div className="text-sm text-zinc-300">対応要求</div>
-                <p className="mt-2 text-sm text-white">{selectedTask.improvementPlan}</p>
+                <p className="mt-2 text-sm text-white">{selectedTask.sourceItemKey}</p>
               </div>
             </div>
 
