@@ -80,7 +80,8 @@ const manifestSchema = z.object({
       valueIssueFieldName: z.string().min(1),
       improvementFieldName: z.string().min(1),
       dueDateFieldName: z.string().min(1),
-      photoFieldName: z.string().min(1),
+      beforePhotoFieldName: z.string().min(1),
+      afterPhotoFieldName: z.string().min(1),
       commentFieldName: z.string().min(1),
     }),
     itemMaster: z.object({

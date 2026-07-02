@@ -534,8 +534,13 @@ export class LarkBaseRepository implements BaseRepository {
             history: [],
           }),
           confirmationStatus: rawStatus === "resolved" ? "approved" : "pending",
-          beforePhotos: this.coercePhotos(record.fields[productionBaseManifest.tables.issues.photoFieldName]),
-          afterPhotos: this.coercePhotos(record.fields[productionBaseManifest.tables.issues.photoFieldName]),
+          beforePhotos: this.coercePhotos(
+            record.fields[productionBaseManifest.tables.issues.beforePhotoFieldName] ??
+              record.fields["写真"],
+          ),
+          afterPhotos: this.coercePhotos(
+            record.fields[productionBaseManifest.tables.issues.afterPhotoFieldName],
+          ),
           feedbackComment,
           feedbackSubmittedAt:
             this.coerceText(record.fields["整改提出時間"]) ||
@@ -843,7 +848,7 @@ export class LarkBaseRepository implements BaseRepository {
         [productionBaseManifest.tables.issues.commentFieldName]: task.comment,
         担当者: task.assignee,
         SV: user.name,
-        [productionBaseManifest.tables.issues.photoFieldName]: (task.beforePhotos ?? []).map((photo) => ({
+        [productionBaseManifest.tables.issues.beforePhotoFieldName]: (task.beforePhotos ?? []).map((photo) => ({
           name: photo.name,
           url: photo.url,
         })),
@@ -881,7 +886,7 @@ export class LarkBaseRepository implements BaseRepository {
     await this.updateRecord(appConfig.larkIssueTableId, taskId, {
       [productionBaseManifest.tables.issues.commentFieldName]: input.comment,
       整改提出時間: new Date().toISOString(),
-      [productionBaseManifest.tables.issues.photoFieldName]: input.photos.map((photo) => ({
+      [productionBaseManifest.tables.issues.afterPhotoFieldName]: input.photos.map((photo) => ({
         name: photo.name,
         url: photo.url,
       })),

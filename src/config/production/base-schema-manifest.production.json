@@ -51,7 +51,8 @@
       "valueIssueFieldName": "価値創造指摘項目",
       "improvementFieldName": "改善方法 ※SV設定",
       "dueDateFieldName": "改善期限",
-      "photoFieldName": "写真",
+      "beforePhotoFieldName": "改善前写真",
+      "afterPhotoFieldName": "改善後写真",
       "commentFieldName": "コメント"
     },
     "itemMaster": {
