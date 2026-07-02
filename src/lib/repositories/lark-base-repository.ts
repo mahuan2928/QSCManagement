@@ -669,7 +669,8 @@ export class LarkBaseRepository implements BaseRepository {
     const items = await this.listRecords(appConfig.larkIssueTableId);
     let tasks: RectificationTask[] = items.flatMap((record) => {
         const storeRef = this.coerceTextArray(record.fields["店舗"])[0];
-        const storeName = this.coerceText(record.fields["店舗名"]);
+        const storeName =
+          this.coerceText(record.fields["店舗名"]) || this.coerceText(record.fields["店舗"]);
         const store = stores.find(
           (current) => current.id === storeRef || current.name === storeName,
         );
@@ -1028,7 +1029,6 @@ export class LarkBaseRepository implements BaseRepository {
 
     await this.createRecord(appConfig.larkMinimumTableId, {
       店舗: [store.id],
-      店舗名: store.name,
       対応日: input.auditDate,
       [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
       [productionBaseManifest.tables.minimum.completionFieldName]:
@@ -1053,7 +1053,6 @@ export class LarkBaseRepository implements BaseRepository {
       );
       await this.createRecord(appConfig.larkOperationTableId, {
         店舗: [store.id],
-        店舗名: store.name,
         対応日: input.auditDate,
         [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
         [productionBaseManifest.tables.operation.completionFieldName]:
@@ -1078,7 +1077,6 @@ export class LarkBaseRepository implements BaseRepository {
         );
         await this.createRecord(appConfig.larkValueTableId, {
           店舗: [store.id],
-          店舗名: store.name,
           対応日: input.auditDate,
           [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
           [productionBaseManifest.tables.value.completionFieldName]:
@@ -1090,8 +1088,7 @@ export class LarkBaseRepository implements BaseRepository {
 
     for (const task of input.tasks) {
       await this.createRecord(appConfig.larkIssueTableId, {
-        店舗名: store.name,
-        店舗: [store.id],
+        店舗: store.name,
         [productionBaseManifest.tables.issues.surveyTypeFieldName]:
           this.resolveIssueCategoryLabel(task.category),
         [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
