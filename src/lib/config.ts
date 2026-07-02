@@ -37,7 +37,7 @@ export const appConfig = {
   larkRedirectUri:
     process.env.LARK_REDIRECT_URI ?? "https://qscmanagement.mahuan220.workers.dev/api/auth/lark/callback",
   larkBaseAppToken: process.env.LARK_BASE_APP_TOKEN ?? "RADabvBDpavPzFsMmIHj7KOxpXc",
-  larkStoreTableId: process.env.LARK_BASE_STORE_TABLE_ID ?? "tblPXXFwLGJh96Np",
+  larkStoreTableId: process.env.LARK_BASE_STORE_TABLE_ID ?? "tblKmUWvhrg8v1n0",
   larkMinimumTableId: process.env.LARK_BASE_MINIMUM_TABLE_ID ?? "tblVQA4TkDmBAImb",
   larkOperationTableId: process.env.LARK_BASE_OPERATION_TABLE_ID ?? "tbldp5mMzD6BRkuj",
   larkValueTableId: process.env.LARK_BASE_VALUE_TABLE_ID ?? "tblq0BeYXTzhCqcs",

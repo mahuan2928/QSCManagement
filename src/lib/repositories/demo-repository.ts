@@ -418,8 +418,8 @@ export class DemoRepository implements BaseRepository {
   async getSchema(): Promise<TableSchema[]> {
     return [
       {
-        tableId: "tblPXXFwLGJh96Np",
-        tableName: "店舗マスタ(これを使用する)",
+        tableId: "tblKmUWvhrg8v1n0",
+        tableName: "店舗関連表",
         fields: [
           { fieldId: "店舗名", fieldName: "店舗名", type: "text" },
           { fieldId: "地域", fieldName: "地域", type: "text" },

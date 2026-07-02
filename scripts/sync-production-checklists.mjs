@@ -41,8 +41,8 @@ writeJson("base-schema-manifest.production.json", {
   appToken: "RADabvBDpavPzFsMmIHj7KOxpXc",
   tables: {
     stores: {
-      tableId: "tblPXXFwLGJh96Np",
-      tableName: "店舗マスタ(これを使用する)",
+      tableId: "tblKmUWvhrg8v1n0",
+      tableName: "店舗関連表",
     },
     minimum: {
       tableId: "tblVQA4TkDmBAImb",

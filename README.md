@@ -13,7 +13,7 @@
 ## 2. 接続対象 Base
 - Base 名：`【最新】5C管理`
 - Base Token：`RADabvBDpavPzFsMmIHj7KOxpXc`
-- `店舗マスタ(これを使用する)`：`tblPXXFwLGJh96Np`
+- `店舗関連表`：`tblKmUWvhrg8v1n0`
 - `最低遵守項目`：`tblVQA4TkDmBAImb`
 - `運営基準項目`：`tbldp5mMzD6BRkuj`
 - `価値創造項目`：`tblq0BeYXTzhCqcs`

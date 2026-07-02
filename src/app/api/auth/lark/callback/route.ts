@@ -10,9 +10,36 @@ interface LarkStoreRecord {
   fields: Record<string, unknown>;
 }
 
-async function resolveRole(accessToken: string, openId: string, name: string) {
+interface BitableResponse<T> {
+  code: number;
+  msg?: string;
+  data?: T;
+}
+
+interface LarkTableItem {
+  table_id: string;
+  name: string;
+}
+
+function toCandidateValues(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => toCandidateValues(item));
+  }
+  if (typeof value === "string") {
+    return [value];
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap((item) => toCandidateValues(item));
+  }
+  if (value === null || value === undefined) {
+    return [];
+  }
+  return [String(value)];
+}
+
+async function searchStoreRecords(accessToken: string, tableId: string) {
   const response = await fetch(
-    `${appConfig.larkOpenApiBaseUrl}/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${appConfig.larkStoreTableId}/records/search`,
+    `${appConfig.larkOpenApiBaseUrl}/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${tableId}/records/search`,
     {
       method: "POST",
       headers: {
@@ -28,11 +55,50 @@ async function resolveRole(accessToken: string, openId: string, name: string) {
     throw new Error("`店舗マスター` の取得に失敗したため、本番モードのロール判定ができません。");
   }
 
-  const json = (await response.json()) as {
-    code: number;
-    msg?: string;
-    data?: { items?: LarkStoreRecord[] };
-  };
+  return (await response.json()) as BitableResponse<{ items?: LarkStoreRecord[] }>;
+}
+
+async function resolveStoreTableId(accessToken: string) {
+  const response = await fetch(
+    `${appConfig.larkOpenApiBaseUrl}/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables?page_size=100`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("`店舗マスター` の表一覧取得に失敗しました。");
+  }
+
+  const json = (await response.json()) as BitableResponse<{ items?: LarkTableItem[] }>;
+  if (json.code !== 0) {
+    throw new Error(json.msg ?? "`店舗マスター` の表一覧取得に失敗しました。");
+  }
+
+  const tables = json.data?.items ?? [];
+  const matched = tables.find((table) =>
+    ["店舗関連表", "店舗マスタ(これを使用する)", "店舗マスタ", "店舗マスター"].some((name) =>
+      table.name.includes(name),
+    ),
+  );
+
+  if (!matched) {
+    throw new Error("`店舗マスター` の実表が見つかりません。Base の表名を確認してください。");
+  }
+
+  return matched.table_id;
+}
+
+async function resolveRole(accessToken: string, openId: string, name: string) {
+  let json = await searchStoreRecords(accessToken, appConfig.larkStoreTableId);
+
+  if (json.code !== 0 && json.msg === "WrongTableId") {
+    const actualTableId = await resolveStoreTableId(accessToken);
+    json = await searchStoreRecords(accessToken, actualTableId);
+  }
 
   if (json.code !== 0) {
     throw new Error(json.msg ?? "`店舗マスター` の取得に失敗しました。");
@@ -40,8 +106,11 @@ async function resolveRole(accessToken: string, openId: string, name: string) {
 
   const records = json.data?.items ?? [];
   const storeRecord = records.find((record) => {
-    const owner = `${record.fields[appConfig.storeOwnerFieldId] ?? record.fields["店舗ユーザーID"] ?? ""}`;
-    return owner === openId || owner === name;
+    const ownerCandidates = [
+      ...toCandidateValues(record.fields[appConfig.storeOwnerFieldId]),
+      ...toCandidateValues(record.fields["店舗ユーザーID"]),
+    ];
+    return ownerCandidates.includes(openId) || ownerCandidates.includes(name);
   });
   if (storeRecord) {
     return buildProductionSession({
@@ -55,8 +124,12 @@ async function resolveRole(accessToken: string, openId: string, name: string) {
   }
 
   const svRecord = records.find((record) => {
-    const owner = `${record.fields[appConfig.svOwnerFieldId] ?? record.fields["SV"] ?? ""}`;
-    return owner === openId || owner === name;
+    const ownerCandidates = [
+      ...toCandidateValues(record.fields[appConfig.svOwnerFieldId]),
+      ...toCandidateValues(record.fields["SVユーザーID"]),
+      ...toCandidateValues(record.fields["SV"]),
+    ];
+    return ownerCandidates.includes(openId) || ownerCandidates.includes(name);
   });
   if (svRecord) {
     return buildProductionSession({
