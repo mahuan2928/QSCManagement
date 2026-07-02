@@ -6,12 +6,9 @@ import {
   calculateChecklistScore,
   normalizeTaskStatus,
   resolveMinimumGrade,
-  resolveOperationGrade,
-  resolveValueGrade,
   summarizeTasks,
 } from "../business-rules";
 import {
-  assertProductionChecklistResolved,
   productionBaseManifest,
   productionMinimumChecklist,
   productionOperationChecklist,
@@ -44,10 +41,16 @@ interface ListRecordsResponse {
   items?: LarkRecord[];
 }
 
+interface LarkField {
+  field_id: string;
+  field_name: string;
+  is_primary?: boolean;
+  type?: number;
+  ui_type?: string;
+}
+
 export class LarkBaseRepository implements BaseRepository {
-  constructor(private readonly userAccessToken: string) {
-    assertProductionChecklistResolved();
-  }
+  constructor(private readonly userAccessToken: string) {}
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
     const response = await fetch(`${appConfig.larkOpenApiBaseUrl}${path}`, {
@@ -82,6 +85,13 @@ export class LarkBaseRepository implements BaseRepository {
       },
     );
 
+    return data.items ?? [];
+  }
+
+  private async listFields(tableId: string): Promise<LarkField[]> {
+    const data = await this.request<{ items?: LarkField[] }>(
+      `/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${tableId}/fields?page_size=200`,
+    );
     return data.items ?? [];
   }
 
@@ -240,17 +250,70 @@ export class LarkBaseRepository implements BaseRepository {
     return stores.find((store) => store.id === linkedStoreId || store.name === storeName);
   }
 
-  private buildChecklistFieldPayload(
+  private hasResolvedChecklistMappings(definitions: typeof productionMinimumChecklist) {
+    return definitions.every(
+      (definition) =>
+        !definition.larkFieldId?.startsWith("__UNRESOLVED_") &&
+        !definition.larkFieldName?.startsWith("__UNRESOLVED_"),
+    );
+  }
+
+  private async resolveChecklistFieldTargets(
+    tableId: string,
+    definitions: typeof productionMinimumChecklist,
+    excludedFieldNames: string[],
+  ) {
+    if (this.hasResolvedChecklistMappings(definitions)) {
+      return definitions.map((definition) => ({
+        key: definition.key,
+        target: definition.larkFieldId ?? definition.larkFieldName ?? definition.label,
+      }));
+    }
+
+    const fields = await this.listFields(tableId);
+    const excluded = new Set(excludedFieldNames);
+    const candidateUiTypes = new Set(["SingleSelect", "Checkbox", "Text"]);
+    const candidates = fields.filter((field) => {
+      if (field.is_primary) {
+        return false;
+      }
+      if (excluded.has(field.field_name)) {
+        return false;
+      }
+      if (field.field_name.startsWith("作成") || field.field_name.startsWith("更新")) {
+        return false;
+      }
+      if (!field.ui_type) {
+        return true;
+      }
+      return candidateUiTypes.has(field.ui_type);
+    });
+
+    if (candidates.length < definitions.length) {
+      throw new Error(
+        `本番 Base のチェック項目フィールドを自動解決できません。tableId=${tableId}, expected=${definitions.length}, actual=${candidates.length}`,
+      );
+    }
+
+    return definitions.map((definition, index) => ({
+      key: definition.key,
+      target: candidates[index]?.field_id ?? candidates[index]?.field_name ?? definition.label,
+    }));
+  }
+
+  private async buildChecklistFieldPayload(
+    tableId: string,
     definitions: typeof productionMinimumChecklist,
     items: CreateAuditInput["minimumItems"],
+    excludedFieldNames: string[],
   ) {
+    const fieldTargets = await this.resolveChecklistFieldTargets(tableId, definitions, excludedFieldNames);
     return Object.fromEntries(
-      definitions.map((definition) => {
+      fieldTargets.map((definition) => {
         const answer = items.find((item) => item.key === definition.key);
-        const fieldName = definition.larkFieldId ?? definition.larkFieldName ?? definition.label;
         const value =
           answer?.status === "ok" ? "OK" : answer?.status === "ng" ? "NG" : "";
-        return [fieldName, value];
+        return [definition.target, value];
       }),
     );
   }
@@ -657,6 +720,20 @@ export class LarkBaseRepository implements BaseRepository {
     const minimumAuditId = `minimum-${Date.now()}`;
     const operationAuditId = minimumPassed ? `operation-${Date.now()}` : "";
     const valueAuditId = operationPassed ? `value-${Date.now()}` : undefined;
+    const minimumFieldPayload = await this.buildChecklistFieldPayload(
+      appConfig.larkMinimumTableId,
+      productionMinimumChecklist,
+      input.minimumItems,
+      [
+        "店舗",
+        "店舗名",
+        "対応日",
+        productionBaseManifest.tables.issues.cycleFieldName,
+        productionBaseManifest.tables.minimum.scoreFieldName,
+        productionBaseManifest.tables.minimum.gradeFieldName,
+        productionBaseManifest.tables.minimum.completionFieldName,
+      ],
+    );
 
     await this.createRecord(appConfig.larkMinimumTableId, {
       店舗: [store.id],
@@ -665,10 +742,24 @@ export class LarkBaseRepository implements BaseRepository {
       [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
       [productionBaseManifest.tables.minimum.completionFieldName]:
         input.minimumCompletionState === "completed",
-      ...this.buildChecklistFieldPayload(productionMinimumChecklist, input.minimumItems),
+      ...minimumFieldPayload,
     });
 
     if (minimumPassed) {
+      const operationFieldPayload = await this.buildChecklistFieldPayload(
+        appConfig.larkOperationTableId,
+        productionOperationChecklist,
+        input.operationItems,
+        [
+          "店舗",
+          "店舗名",
+          "対応日",
+          productionBaseManifest.tables.issues.cycleFieldName,
+          productionBaseManifest.tables.operation.scoreFieldName,
+          productionBaseManifest.tables.operation.gradeFieldName,
+          productionBaseManifest.tables.operation.completionFieldName,
+        ],
+      );
       await this.createRecord(appConfig.larkOperationTableId, {
         店舗: [store.id],
         店舗名: store.name,
@@ -676,10 +767,24 @@ export class LarkBaseRepository implements BaseRepository {
         [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
         [productionBaseManifest.tables.operation.completionFieldName]:
           input.operationCompletionState === "completed",
-        ...this.buildChecklistFieldPayload(productionOperationChecklist, input.operationItems),
+        ...operationFieldPayload,
       });
 
       if (operationPassed) {
+        const valueFieldPayload = await this.buildChecklistFieldPayload(
+          appConfig.larkValueTableId,
+          productionValueChecklist,
+          input.valueItems,
+          [
+            "店舗",
+            "店舗名",
+            "対応日",
+            productionBaseManifest.tables.issues.cycleFieldName,
+            productionBaseManifest.tables.value.scoreFieldName,
+            productionBaseManifest.tables.value.gradeFieldName,
+            productionBaseManifest.tables.value.completionFieldName,
+          ],
+        );
         await this.createRecord(appConfig.larkValueTableId, {
           店舗: [store.id],
           店舗名: store.name,
@@ -687,7 +792,7 @@ export class LarkBaseRepository implements BaseRepository {
           [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
           [productionBaseManifest.tables.value.completionFieldName]:
             input.valueCompletionState === "completed",
-          ...this.buildChecklistFieldPayload(productionValueChecklist, input.valueItems),
+          ...valueFieldPayload,
         });
       }
     }
