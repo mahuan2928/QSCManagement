@@ -58,7 +58,7 @@ function ChecklistSection(props: {
       upsertTask({
         id: taskId,
         category: props.category,
-        sourceItemKey: item.key,
+        sourceItemKey: item.label,
         issueType: "",
         comment: `${item.label} が基準未達です`,
         improvementPlan: "",
@@ -119,7 +119,7 @@ function ChecklistSection(props: {
                     const current = tasks.find((task) => task.id === taskId) ?? {
                       id: taskId,
                       category: props.category,
-                      sourceItemKey: item.key,
+                      sourceItemKey: item.label,
                       issueType: "",
                       comment: `${item.label} が基準未達です`,
                       improvementPlan: "",

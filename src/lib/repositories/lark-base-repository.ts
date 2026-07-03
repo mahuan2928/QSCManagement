@@ -49,6 +49,11 @@ interface LarkField {
   is_primary?: boolean;
   type?: number;
   ui_type?: string;
+  property?: {
+    options?: Array<{
+      name?: string;
+    }>;
+  };
 }
 
 function sleep(ms: number) {
@@ -542,7 +547,6 @@ export class LarkBaseRepository implements BaseRepository {
 
     const fields = await this.listFields(tableId);
     const excluded = new Set(excludedFieldNames);
-    const candidateUiTypes = new Set(["SingleSelect", "Checkbox", "Text"]);
     const candidates = fields.filter((field) => {
       if (field.is_primary) {
         return false;
@@ -553,10 +557,11 @@ export class LarkBaseRepository implements BaseRepository {
       if (field.field_name.startsWith("作成") || field.field_name.startsWith("更新")) {
         return false;
       }
-      if (!field.ui_type) {
-        return true;
-      }
-      return candidateUiTypes.has(field.ui_type);
+      return (
+        field.ui_type === "SingleSelect" &&
+        (field.property?.options ?? []).some((option) => option.name === "OK") &&
+        (field.property?.options ?? []).some((option) => option.name === "NG")
+      );
     });
 
     if (candidates.length < definitions.length) {
@@ -603,6 +608,11 @@ export class LarkBaseRepository implements BaseRepository {
   private normalizeIssueType(value: string) {
     const normalized = value.trim();
     return ISSUE_TYPE_OPTIONS.has(normalized) ? normalized : "";
+  }
+
+  private normalizeDateTimeValue(value: string) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.getTime();
   }
 
   private resolveIssueFieldName(category: RectificationTask["category"]) {
@@ -664,7 +674,7 @@ export class LarkBaseRepository implements BaseRepository {
       return null;
     }
 
-    const storeName = this.coerceText(record.fields["店舗名"]);
+    const storeName = this.coerceText(record.fields["店舗名"]) || this.coerceText(record.fields["店舗"]);
     const linkedStoreId = this.coerceTextArray(record.fields["店舗"])[0] || storeName;
     const items = this.mapChecklistItemsFromRecord(record, definitions);
     const score = this.coerceNumber(record.fields[scoreFieldName]);
@@ -712,7 +722,7 @@ export class LarkBaseRepository implements BaseRepository {
     const accessibleStoreNames = new Set(stores.map((store) => store.name));
     const items = await this.listRecords(appConfig.larkIssueTableId);
     let tasks: RectificationTask[] = items.flatMap((record) => {
-        const storeRef = this.coerceTextArray(record.fields["店舗"])[0];
+        const storeRef = this.coerceTextArray(record.fields["店舗"])[0] || this.coerceText(record.fields["店舗"]);
         const storeName =
           this.coerceText(record.fields["店舗名"]) || this.coerceText(record.fields["店舗"]);
         const store = stores.find(
@@ -848,8 +858,8 @@ export class LarkBaseRepository implements BaseRepository {
     const valueByStoreAndDate = new Map<string, LarkRecord>();
 
     const resolveStore = (record: LarkRecord) => {
-      const linkedStoreId = this.coerceTextArray(record.fields["店舗"])[0];
-      const storeName = this.coerceText(record.fields["店舗名"]);
+      const linkedStoreId = this.coerceTextArray(record.fields["店舗"])[0] || this.coerceText(record.fields["店舗"]);
+      const storeName = this.coerceText(record.fields["店舗名"]) || this.coerceText(record.fields["店舗"]);
       return (linkedStoreId ? storeById.get(linkedStoreId) : undefined) ?? storeByName.get(storeName);
     };
 
@@ -1088,8 +1098,7 @@ export class LarkBaseRepository implements BaseRepository {
     // #endregion
 
     await this.createRecord(appConfig.larkMinimumTableId, {
-      店舗: [store.id],
-      対応日: input.auditDate,
+      店舗: store.name,
       [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
       [productionBaseManifest.tables.minimum.completionFieldName]:
         input.minimumCompletionState === "completed",
@@ -1128,8 +1137,7 @@ export class LarkBaseRepository implements BaseRepository {
       }).catch(() => {});
       // #endregion
       await this.createRecord(appConfig.larkOperationTableId, {
-        店舗: [store.id],
-        対応日: input.auditDate,
+        店舗: store.name,
         [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
         [productionBaseManifest.tables.operation.completionFieldName]:
           input.operationCompletionState === "completed",
@@ -1168,8 +1176,7 @@ export class LarkBaseRepository implements BaseRepository {
         }).catch(() => {});
         // #endregion
         await this.createRecord(appConfig.larkValueTableId, {
-          店舗: [store.id],
-          対応日: input.auditDate,
+          店舗: store.name,
           [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
           [productionBaseManifest.tables.value.completionFieldName]:
             input.valueCompletionState === "completed",
@@ -1185,12 +1192,10 @@ export class LarkBaseRepository implements BaseRepository {
           this.resolveIssueCategoryLabel(task.category),
         [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
         [productionBaseManifest.tables.issues.typeFieldName]: this.normalizeIssueType(task.issueType),
-        [this.resolveIssueFieldName(task.category)]: task.sourceItemKey,
+        [this.resolveIssueFieldName(task.category)]: [task.sourceItemKey],
         [productionBaseManifest.tables.issues.improvementFieldName]: task.improvementPlan,
-        [productionBaseManifest.tables.issues.dueDateFieldName]: task.dueDate,
+        [productionBaseManifest.tables.issues.dueDateFieldName]: this.normalizeDateTimeValue(task.dueDate),
         [productionBaseManifest.tables.issues.commentFieldName]: task.comment,
-        担当者: task.assignee,
-        SV: user.name,
         [productionBaseManifest.tables.issues.beforePhotoFieldName]: (task.beforePhotos ?? []).map((photo) =>
           this.mapPhotoForLark(photo),
         ),
@@ -1235,7 +1240,7 @@ export class LarkBaseRepository implements BaseRepository {
   ): Promise<RectificationTask> {
     await this.updateRecord(appConfig.larkIssueTableId, taskId, {
       [productionBaseManifest.tables.issues.feedbackCommentFieldName]: input.comment,
-      [productionBaseManifest.tables.issues.feedbackSubmittedAtFieldName]: new Date().toISOString(),
+      [productionBaseManifest.tables.issues.feedbackSubmittedAtFieldName]: Date.now(),
       [productionBaseManifest.tables.issues.afterPhotoFieldName]: input.photos.map((photo) =>
         this.mapPhotoForLark(photo),
       ),
@@ -1260,7 +1265,7 @@ export class LarkBaseRepository implements BaseRepository {
     await this.updateRecord(appConfig.larkIssueTableId, taskId, {
       改善ステータス: "resolved",
       [productionBaseManifest.tables.issues.svConfirmationStatusFieldName]: "approved",
-      [productionBaseManifest.tables.issues.svConfirmationAtFieldName]: new Date().toISOString(),
+      [productionBaseManifest.tables.issues.svConfirmationAtFieldName]: Date.now(),
     });
 
     const task = await this.getTask(_user, taskId);

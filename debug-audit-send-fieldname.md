@@ -25,9 +25,15 @@
 - Code evidence: `audit-wizard.tsx` defaulted `task.issueType` to `item.group` (`最低遵守` / `運営基準` / `価値創造`), which is outside the valid options
 
 ## Verification Conclusion
-- Hypothesis A: Inconclusive
-- Hypothesis B: Rejected
-- Hypothesis C: Rejected
+- Hypothesis A: Confirmed in multiple places
+- Hypothesis B: Confirmed
+- Hypothesis C: Confirmed
 - Hypothesis D: Rejected
 - Hypothesis E: Rejected
-- Confirmed root cause: invalid default value for `問題指摘.種別` caused `SingleSelectFieldConvFail`
+- Confirmed causes:
+  - `問題指摘.種別` wrote invalid `最低遵守/運営基準/価値創造`
+  - `問題指摘.最低遵守指摘項目/運営基準指摘項目/価値創造指摘項目` are `MultiSelect`, but code wrote a string
+  - `問題指摘.SV/担当者` are `Lookup`, but code wrote manual values
+  - `最低/運営/価値.店舗` are `SingleSelect`, but code wrote `[store.id]`
+  - `最低/運営/価値.対応日` are `CreatedTime`, but code tried to write them
+  - auto checklist mapping previously mixed in `ID/Lookup/Formula` fields; now restricted to writable `OK/NG` single-selects only
