@@ -11,6 +11,8 @@ import {
 import { createTaskId, useAuditWizardStore } from "../hooks/use-audit-wizard-store";
 import type { ChecklistDefinition, Store, UploadedPhoto } from "../lib/domain";
 
+const ISSUE_TYPE_OPTIONS = ["躾", "Q", "S", "C", "M"] as const;
+
 async function filesToDataUrls(fileList: FileList): Promise<UploadedPhoto[]> {
   const files = Array.from(fileList);
   return Promise.all(
@@ -57,7 +59,7 @@ function ChecklistSection(props: {
         id: taskId,
         category: props.category,
         sourceItemKey: item.key,
-        issueType: item.group,
+        issueType: "",
         comment: `${item.label} が基準未達です`,
         improvementPlan: "",
         dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
@@ -118,7 +120,7 @@ function ChecklistSection(props: {
                       id: taskId,
                       category: props.category,
                       sourceItemKey: item.key,
-                      issueType: item.group,
+                      issueType: "",
                       comment: `${item.label} が基準未達です`,
                       improvementPlan: "",
                       dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
@@ -141,7 +143,7 @@ function ChecklistSection(props: {
                           </div>
                         </div>
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
-                          <input
+                          <select
                             value={current.issueType}
                             onChange={(event) =>
                               upsertTask({
@@ -149,9 +151,15 @@ function ChecklistSection(props: {
                                 issueType: event.target.value,
                               })
                             }
-                            placeholder="問題種別"
                             className="rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-3 text-sm"
-                          />
+                          >
+                            <option value="">問題種別を選択</option>
+                            {ISSUE_TYPE_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
                           <input
                             value={current.assignee}
                             onChange={(event) =>

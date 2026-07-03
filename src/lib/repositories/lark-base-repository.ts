@@ -60,6 +60,8 @@ interface LarkUserValue {
   name?: string;
 }
 
+const ISSUE_TYPE_OPTIONS = new Set(["躾", "Q", "S", "C", "M"]);
+
 export class LarkBaseRepository implements BaseRepository {
   private readonly recordListCache = new Map<string, Promise<LarkRecord[]>>();
 
@@ -596,6 +598,11 @@ export class LarkBaseRepository implements BaseRepository {
     }
 
     return "運営基準項目";
+  }
+
+  private normalizeIssueType(value: string) {
+    const normalized = value.trim();
+    return ISSUE_TYPE_OPTIONS.has(normalized) ? normalized : "";
   }
 
   private resolveIssueFieldName(category: RectificationTask["category"]) {
@@ -1177,7 +1184,7 @@ export class LarkBaseRepository implements BaseRepository {
         [productionBaseManifest.tables.issues.surveyTypeFieldName]:
           this.resolveIssueCategoryLabel(task.category),
         [productionBaseManifest.tables.issues.cycleFieldName]: input.cycle,
-        [productionBaseManifest.tables.issues.typeFieldName]: task.issueType,
+        [productionBaseManifest.tables.issues.typeFieldName]: this.normalizeIssueType(task.issueType),
         [this.resolveIssueFieldName(task.category)]: task.sourceItemKey,
         [productionBaseManifest.tables.issues.improvementFieldName]: task.improvementPlan,
         [productionBaseManifest.tables.issues.dueDateFieldName]: task.dueDate,

@@ -21,6 +21,13 @@
 ## Log Evidence
 - Instrumentation added in `src/lib/repositories/lark-base-repository.ts`
 - Awaiting reproduction after clicking `5C評価を送信`
+- Schema evidence: `問題指摘.種別` is `SingleSelect`, and valid options are only `躾 / Q / S / C / M`
+- Code evidence: `audit-wizard.tsx` defaulted `task.issueType` to `item.group` (`最低遵守` / `運営基準` / `価値創造`), which is outside the valid options
 
 ## Verification Conclusion
-[Pending]
+- Hypothesis A: Inconclusive
+- Hypothesis B: Rejected
+- Hypothesis C: Rejected
+- Hypothesis D: Rejected
+- Hypothesis E: Rejected
+- Confirmed root cause: invalid default value for `問題指摘.種別` caused `SingleSelectFieldConvFail`
