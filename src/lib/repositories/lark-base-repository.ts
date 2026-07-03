@@ -108,6 +108,26 @@ export class LarkBaseRepository implements BaseRepository {
       );
 
       const rawText = await response.text();
+      // #region debug-point D:request-response
+      fetch("http://127.0.0.1:7777/event", {
+        method: "POST",
+        body: JSON.stringify({
+          sessionId: "audit-send-fieldname",
+          runId: "pre-fix",
+          hypothesisId: "D",
+          location: "lark-base-repository.ts:request",
+          msg: "[DEBUG] request completed",
+          data: {
+            path,
+            attempt,
+            status: response.status,
+            ok: response.ok,
+            bodyPreview: rawText.slice(0, 500),
+          },
+          ts: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       let json: { code?: number; data?: T; msg?: string } | null = null;
       try {
         json = rawText ? (JSON.parse(rawText) as { code?: number; data?: T; msg?: string }) : null;
@@ -277,6 +297,23 @@ export class LarkBaseRepository implements BaseRepository {
   }
 
   private async createRecord(tableId: string, fields: Record<string, unknown>) {
+    // #region debug-point A:create-record
+    fetch("http://127.0.0.1:7777/event", {
+      method: "POST",
+      body: JSON.stringify({
+        sessionId: "audit-send-fieldname",
+        runId: "pre-fix",
+        hypothesisId: "A",
+        location: "lark-base-repository.ts:createRecord",
+        msg: "[DEBUG] createRecord payload",
+        data: {
+          tableId,
+          fieldNames: Object.keys(fields),
+        },
+        ts: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
     await this.request(
       `/open-apis/bitable/v1/apps/${appConfig.larkBaseAppToken}/tables/${tableId}/records`,
       {
@@ -1026,6 +1063,22 @@ export class LarkBaseRepository implements BaseRepository {
         productionBaseManifest.tables.minimum.completionFieldName,
       ],
     );
+    // #region debug-point B:minimum-payload
+    fetch("http://127.0.0.1:7777/event", {
+      method: "POST",
+      body: JSON.stringify({
+        sessionId: "audit-send-fieldname",
+        runId: "pre-fix",
+        hypothesisId: "B",
+        location: "lark-base-repository.ts:createAudit:minimum",
+        msg: "[DEBUG] minimum payload targets",
+        data: {
+          fieldNames: Object.keys(minimumFieldPayload),
+        },
+        ts: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
 
     await this.createRecord(appConfig.larkMinimumTableId, {
       店舗: [store.id],
@@ -1051,6 +1104,22 @@ export class LarkBaseRepository implements BaseRepository {
           productionBaseManifest.tables.operation.completionFieldName,
         ],
       );
+      // #region debug-point B:operation-payload
+      fetch("http://127.0.0.1:7777/event", {
+        method: "POST",
+        body: JSON.stringify({
+          sessionId: "audit-send-fieldname",
+          runId: "pre-fix",
+          hypothesisId: "B",
+          location: "lark-base-repository.ts:createAudit:operation",
+          msg: "[DEBUG] operation payload targets",
+          data: {
+            fieldNames: Object.keys(operationFieldPayload),
+          },
+          ts: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       await this.createRecord(appConfig.larkOperationTableId, {
         店舗: [store.id],
         対応日: input.auditDate,
@@ -1075,6 +1144,22 @@ export class LarkBaseRepository implements BaseRepository {
             productionBaseManifest.tables.value.completionFieldName,
           ],
         );
+        // #region debug-point B:value-payload
+        fetch("http://127.0.0.1:7777/event", {
+          method: "POST",
+          body: JSON.stringify({
+            sessionId: "audit-send-fieldname",
+            runId: "pre-fix",
+            hypothesisId: "B",
+            location: "lark-base-repository.ts:createAudit:value",
+            msg: "[DEBUG] value payload targets",
+            data: {
+              fieldNames: Object.keys(valueFieldPayload),
+            },
+            ts: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         await this.createRecord(appConfig.larkValueTableId, {
           店舗: [store.id],
           対応日: input.auditDate,
