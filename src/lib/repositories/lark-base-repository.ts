@@ -497,7 +497,7 @@ export class LarkBaseRepository implements BaseRepository {
     if (this.hasResolvedChecklistMappings(definitions)) {
       return definitions.map((definition) => ({
         key: definition.key,
-        target: definition.larkFieldId ?? definition.larkFieldName ?? definition.label,
+        target: definition.larkFieldName ?? definition.larkFieldId ?? definition.label,
       }));
     }
 
@@ -528,7 +528,7 @@ export class LarkBaseRepository implements BaseRepository {
 
     return definitions.map((definition, index) => ({
       key: definition.key,
-      target: candidates[index]?.field_id ?? candidates[index]?.field_name ?? definition.label,
+      target: candidates[index]?.field_name ?? candidates[index]?.field_id ?? definition.label,
     }));
   }
 
